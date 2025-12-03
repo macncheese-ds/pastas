@@ -17,10 +17,16 @@ CREATE TABLE IF NOT EXISTS solder_paste (
     -- Identificador único
     id INT AUTO_INCREMENT PRIMARY KEY,
     
+    -- DID (Document Identification) - Requerido al registrar
+    did VARCHAR(100) NOT NULL COMMENT 'Document Identification - Requerido al registrar',
+    
     -- Información del QR (datos parseados)
     lot_number VARCHAR(50) NOT NULL COMMENT 'Número de lote (posición 1 del QR)',
     part_number VARCHAR(100) NOT NULL COMMENT 'Número de parte (posición 2 del QR)',
     lot_serial VARCHAR(20) NOT NULL COMMENT 'Serial del lote (posición 5 del QR)',
+    
+    -- Ubicación SMT detectada automáticamente por número de parte
+    smt_location VARCHAR(20) NULL COMMENT 'Ubicación SMT detectada (SMT, SMT2, SMT3, SMT4)',
     
     -- Fechas del producto
     manufacture_date DATE NOT NULL COMMENT 'Fecha de fabricación (posición 4 del QR)',
@@ -55,10 +61,21 @@ CREATE TABLE IF NOT EXISTS solder_paste (
     INDEX idx_part_number (part_number),
     INDEX idx_status (status),
     INDEX idx_expiration (expiration_date),
+    INDEX idx_did (did),
+    INDEX idx_smt_location (smt_location),
     
     -- Restricción única: combinación de lote + serial debe ser única
     UNIQUE KEY unique_lot_serial (lot_number, lot_serial)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Script de migración para bases de datos existentes
+-- Ejecutar si ya tienes datos en la tabla
+-- =====================================================
+-- ALTER TABLE solder_paste ADD COLUMN did VARCHAR(100) NOT NULL DEFAULT '' AFTER id;
+-- ALTER TABLE solder_paste ADD COLUMN smt_location VARCHAR(20) NULL AFTER lot_serial;
+-- ALTER TABLE solder_paste ADD INDEX idx_did (did);
+-- ALTER TABLE solder_paste ADD INDEX idx_smt_location (smt_location);
 
 -- =====================================================
 -- Tabla de log de escaneos (auditoría detallada)

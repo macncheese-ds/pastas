@@ -3,6 +3,7 @@
  * Componente: Fridge In Tab
  * =====================================================
  * Pestaña principal con el flujo de escaneos
+ * Incluye: DID obligatorio, validación de 4 horas, detección SMT
  */
 
 'use client';
@@ -14,11 +15,13 @@ import NewPasteModal from '@/components/modals/NewPasteModal';
 import ScanActionModal from '@/components/modals/ScanActionModal';
 import ViscosityModal from '@/components/modals/ViscosityModal';
 import CompletedModal from '@/components/modals/CompletedModal';
+import WaitTimeModal from '@/components/modals/WaitTimeModal';
 import { SolderPaste, ParsedQRData, ApiResponse, ScanType } from '@/types';
 import { parseQRCode } from '@/lib/qrParser';
+import { detectSMTLocation } from '@/config/smtMapping';
 
 // Tipos de modal
-type ModalType = 'new' | 'action' | 'viscosity' | 'completed' | 'error' | null;
+type ModalType = 'new' | 'action' | 'viscosity' | 'completed' | 'error' | 'waitTime' | null;
 
 export default function FridgeInTab() {
   // Estado de datos
@@ -31,6 +34,7 @@ export default function FridgeInTab() {
   const [parsedQR, setParsedQR] = useState<ParsedQRData | null>(null);
   const [selectedPaste, setSelectedPaste] = useState<SolderPaste | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [waitTimeRemaining, setWaitTimeRemaining] = useState<number>(0);
 
   // Cargar datos iniciales
   const fetchPastes = useCallback(async () => {
@@ -57,6 +61,11 @@ export default function FridgeInTab() {
     try {
       // Parsear el código QR
       const parsed = parseQRCode(qrData);
+      
+      // Detectar ubicación SMT automáticamente
+      const smtLocation = detectSMTLocation(parsed.partNumber);
+      parsed.smtLocation = smtLocation;
+      
       setParsedQR(parsed);
 
       // Buscar si existe en la base de datos
@@ -112,8 +121,8 @@ export default function FridgeInTab() {
     }
   };
 
-  // Crear nuevo registro
-  const handleCreatePaste = async () => {
+  // Crear nuevo registro con DID
+  const handleCreatePaste = async (did: string) => {
     if (!parsedQR) return;
 
     setIsProcessing(true);
@@ -122,11 +131,13 @@ export default function FridgeInTab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          did: did,
           lot_number: parsedQR.lotNumber,
           part_number: parsedQR.partNumber,
           lot_serial: parsedQR.lotSerial,
           manufacture_date: parsedQR.manufactureDate,
           expiration_date: parsedQR.expirationDate,
+          smt_location: parsedQR.smtLocation,
         }),
       });
 
@@ -181,18 +192,25 @@ export default function FridgeInTab() {
         body: JSON.stringify({ scan_type: scanType }),
       });
 
-      const data: ApiResponse<SolderPaste> = await response.json();
+      const data: ApiResponse<SolderPaste | { remainingMs: number; remainingTime: string }> = await response.json();
 
       if (data.success && data.data) {
         // Actualizar en la lista
+        const updatedPaste = data.data as SolderPaste;
         setPastes((prev) =>
-          prev.map((p) => (p.id === data.data!.id ? data.data! : p))
+          prev.map((p) => (p.id === updatedPaste.id ? updatedPaste : p))
         );
         setActiveModal(null);
         setSelectedPaste(null);
       } else {
-        setErrorMessage(data.error || 'Error al procesar el escaneo');
-        setActiveModal('error');
+        // Verificar si es error de tiempo de espera (4 horas)
+        if (data.data && 'remainingMs' in data.data) {
+          setWaitTimeRemaining(data.data.remainingMs);
+          setActiveModal('waitTime');
+        } else {
+          setErrorMessage(data.error || 'Error al procesar el escaneo');
+          setActiveModal('error');
+        }
       }
     } catch (error) {
       console.error('Error processing scan:', error);
@@ -282,28 +300,35 @@ export default function FridgeInTab() {
     setParsedQR(null);
     setSelectedPaste(null);
     setErrorMessage('');
+    setWaitTimeRemaining(0);
   };
 
   return (
     <div className="space-y-6">
-      {/* Scanner Input */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Escanear Código QR
-        </h2>
+      {/* Scanner Input - Siempre Escuchando */}
+      <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white">
+            Escáner QR Activo
+          </h2>
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-900/50 text-green-300 border border-green-700">
+            <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+            Siempre escuchando
+          </span>
+        </div>
         <QRScannerInput
           onScan={handleScan}
-          placeholder="Escanee el código QR de la pasta de soldadura..."
+          placeholder="Apunte el escáner al código QR - detección automática..."
         />
-        <p className="mt-2 text-sm text-gray-500">
-          Formato esperado: Lote, Parte, Expiración, Fabricación, Serial
+        <p className="mt-3 text-sm text-neutral-400">
+          📡 El sistema detecta automáticamente los escaneos. Solo apunte el lector al código QR.
         </p>
       </div>
 
       {/* Tabla de registros */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700">
+        <div className="px-6 py-4 border-b border-neutral-700">
+          <h2 className="text-lg font-semibold text-white">
             Registros de Pasta
           </h2>
         </div>
@@ -346,20 +371,27 @@ export default function FridgeInTab() {
         paste={selectedPaste}
       />
 
+      <WaitTimeModal
+        isOpen={activeModal === 'waitTime'}
+        onClose={closeModal}
+        paste={selectedPaste}
+        remainingMs={waitTimeRemaining}
+      />
+
       {/* Modal de error */}
       {activeModal === 'error' && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={closeModal} />
+          <div className="fixed inset-0 bg-black bg-opacity-70" onClick={closeModal} />
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative max-w-md w-full bg-white rounded-lg shadow-xl p-6">
+            <div className="relative max-w-md w-full bg-neutral-800 rounded-lg shadow-xl p-6 border border-neutral-700">
               <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-900/50 mb-4">
+                  <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Error</h3>
-                <p className="text-sm text-gray-500 mb-4">{errorMessage}</p>
+                <h3 className="text-lg font-medium text-white mb-2">Error</h3>
+                <p className="text-sm text-neutral-400 mb-4">{errorMessage}</p>
                 <button
                   onClick={closeModal}
                   className="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"

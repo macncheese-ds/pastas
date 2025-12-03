@@ -14,14 +14,19 @@ export type SolderPasteStatus =
   | 'removed'        // Retirado/finalizado
   | 'rejected';      // Rechazado (viscosidad fuera de rango)
 
+// Ubicaciones SMT disponibles
+export type SMTLocation = 'SMT' | 'SMT2' | 'SMT3' | 'SMT4';
+
 // Registro completo de pasta de soldadura
 export interface SolderPaste {
   id: number;
+  did: string;                         // Document Identification (requerido)
   lot_number: string;
   part_number: string;
   lot_serial: string;
-  manufacture_date: string;  // Formato ISO: YYYY-MM-DD
-  expiration_date: string;   // Formato ISO: YYYY-MM-DD
+  smt_location: SMTLocation | null;    // Ubicación SMT detectada
+  manufacture_date: string;            // Formato ISO: YYYY-MM-DD
+  expiration_date: string;             // Formato ISO: YYYY-MM-DD
   fridge_in_datetime: string | null;
   fridge_out_datetime: string | null;
   mixing_start_datetime: string | null;
@@ -42,15 +47,18 @@ export interface ParsedQRData {
   manufactureDate: string; // Posición 4: Fecha fabricación (YYMMDD -> YYYY-MM-DD)
   lotSerial: string;       // Posición 5: Serial del lote
   rawData: string;         // Datos originales del QR
+  smtLocation?: SMTLocation; // Ubicación SMT detectada automáticamente
 }
 
 // Input para crear nuevo registro
 export interface CreateSolderPasteInput {
+  did: string;             // Document Identification (requerido)
   lot_number: string;
   part_number: string;
   lot_serial: string;
   manufacture_date: string;
   expiration_date: string;
+  smt_location?: SMTLocation;
 }
 
 // Respuesta genérica de la API

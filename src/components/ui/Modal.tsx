@@ -62,23 +62,23 @@ export default function Modal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-black bg-opacity-70 transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Container */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative ${sizeClasses[size]} w-full transform overflow-hidden rounded-lg bg-white shadow-xl transition-all`}
+          className={`relative ${sizeClasses[size]} w-full transform overflow-hidden rounded-lg bg-neutral-800 border border-neutral-700 shadow-xl transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <div className="flex items-center justify-between border-b border-neutral-700 px-6 py-4">
+            <h3 className="text-lg font-semibold text-white">{title}</h3>
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="rounded-md p-1 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>

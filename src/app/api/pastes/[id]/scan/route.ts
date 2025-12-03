@@ -105,6 +105,48 @@ export async function POST(
             { status: 400 }
           );
         }
+        
+        // =====================================================
+        // VALIDACIÓN DE 4 HORAS POST-REFRIGERACIÓN
+        // =====================================================
+        // La pasta debe esperar 4 horas fuera del refrigerador antes de mezclarse
+        if (paste.fridge_out_datetime) {
+          const fridgeOutTime = new Date(paste.fridge_out_datetime);
+          const now = new Date();
+          const fourHoursMs = 4 * 60 * 60 * 1000; // 4 horas en milisegundos
+          const elapsedMs = now.getTime() - fridgeOutTime.getTime();
+          const remainingMs = fourHoursMs - elapsedMs;
+          
+          if (remainingMs > 0) {
+            // No han pasado las 4 horas, calcular tiempo restante
+            const remainingHours = Math.floor(remainingMs / (60 * 60 * 1000));
+            const remainingMinutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+            const remainingSeconds = Math.floor((remainingMs % (60 * 1000)) / 1000);
+            
+            let timeMessage = '';
+            if (remainingHours > 0) {
+              timeMessage = `${remainingHours} hora${remainingHours !== 1 ? 's' : ''} y ${remainingMinutes} minuto${remainingMinutes !== 1 ? 's' : ''}`;
+            } else if (remainingMinutes > 0) {
+              timeMessage = `${remainingMinutes} minuto${remainingMinutes !== 1 ? 's' : ''} y ${remainingSeconds} segundo${remainingSeconds !== 1 ? 's' : ''}`;
+            } else {
+              timeMessage = `${remainingSeconds} segundo${remainingSeconds !== 1 ? 's' : ''}`;
+            }
+            
+            return NextResponse.json<ApiResponse<{ remainingMs: number; remainingTime: string }>>(
+              { 
+                success: false, 
+                error: `Debe esperar 4 horas después de sacar la pasta del refrigerador. Tiempo restante: ${timeMessage}`,
+                data: {
+                  remainingMs,
+                  remainingTime: timeMessage
+                }
+              },
+              { status: 400 }
+            );
+          }
+        }
+        // =====================================================
+        
         updateQuery = `UPDATE solder_paste SET 
           mixing_start_datetime = NOW(), 
           status = 'mixing'

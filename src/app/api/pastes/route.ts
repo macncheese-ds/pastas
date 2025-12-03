@@ -77,8 +77,9 @@ export async function POST(request: NextRequest) {
   try {
     const body: CreateSolderPasteInput = await request.json();
 
-    // Validar campos requeridos
+    // Validar campos requeridos (incluyendo DID)
     const requiredFields: (keyof CreateSolderPasteInput)[] = [
+      'did',
       'lot_number',
       'part_number',
       'lot_serial',
@@ -96,6 +97,17 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+
+    // Validar que el DID no esté vacío
+    if (!body.did.trim()) {
+      return NextResponse.json<ApiResponse>(
+        {
+          success: false,
+          error: 'El DID (Document Identification) es obligatorio',
+        },
+        { status: 400 }
+      );
     }
 
     // Verificar si ya existe
@@ -116,16 +128,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Insertar nuevo registro con timestamp de entrada al refrigerador
+    // Incluye DID y ubicación SMT
     const result = await query<ResultSetHeader>(
       `INSERT INTO solder_paste (
-        lot_number, part_number, lot_serial,
-        manufacture_date, expiration_date,
+        did, lot_number, part_number, lot_serial,
+        smt_location, manufacture_date, expiration_date,
         fridge_in_datetime, status
-      ) VALUES (?, ?, ?, ?, ?, NOW(), 'in_fridge')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'in_fridge')`,
       [
+        body.did.trim(),
         body.lot_number,
         body.part_number,
         body.lot_serial,
+        body.smt_location || null,
         body.manufacture_date,
         body.expiration_date,
       ]
@@ -140,8 +155,8 @@ export async function POST(request: NextRequest) {
     // Registrar en log de escaneos
     await query(
       `INSERT INTO scan_log (solder_paste_id, scan_type, notes)
-       VALUES (?, 'fridge_in', 'Registro inicial - Entrada a refrigerador')`,
-      [result.insertId]
+       VALUES (?, 'fridge_in', ?)`,
+      [result.insertId, `Registro inicial - DID: ${body.did.trim()} - Entrada a refrigerador`]
     );
 
     return NextResponse.json<ApiResponse<SolderPaste>>(

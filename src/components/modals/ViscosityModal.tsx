@@ -108,6 +108,10 @@ export default function ViscosityModal({
         {/* Información de la pasta */}
         <div className="rounded-lg border border-gray-200 p-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="col-span-2">
+              <span className="text-gray-500">DID:</span>
+              <span className="ml-2 font-medium text-blue-600">{paste.did}</span>
+            </div>
             <div>
               <span className="text-gray-500">Lote:</span>
               <span className="ml-2 font-medium">{paste.lot_number}</span>
@@ -115,6 +119,18 @@ export default function ViscosityModal({
             <div>
               <span className="text-gray-500">Serial:</span>
               <span className="ml-2 font-medium">{paste.lot_serial}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Línea SMT:</span>
+              <span className="ml-2">
+                {paste.smt_location ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    {paste.smt_location}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </span>
             </div>
             <div className="col-span-2">
               <span className="text-gray-500">Inicio de mezclado:</span>

@@ -21,7 +21,7 @@ interface TabsProps {
 
 export default function Tabs({ tabs, activeTab, onChange }: TabsProps) {
   return (
-    <div className="border-b border-gray-200">
+    <div className="border-b border-neutral-700">
       <nav className="-mb-px flex space-x-8" aria-label="Tabs">
         {tabs.map((tab) => (
           <button
@@ -31,15 +31,15 @@ export default function Tabs({ tabs, activeTab, onChange }: TabsProps) {
               group inline-flex items-center border-b-2 px-1 py-4 text-sm font-medium
               ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-neutral-400 hover:border-neutral-500 hover:text-neutral-300'
               }
             `}
           >
             {tab.icon && (
               <span
                 className={`mr-2 ${
-                  activeTab === tab.id ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+                  activeTab === tab.id ? 'text-blue-400' : 'text-neutral-500 group-hover:text-neutral-400'
                 }`}
               >
                 {tab.icon}

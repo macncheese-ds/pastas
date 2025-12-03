@@ -40,9 +40,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('fridge-in');
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-neutral-900">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-neutral-800 shadow-sm border-b border-neutral-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -64,16 +64,16 @@ export default function Home() {
                 </div>
               </div>
               <div className="ml-3">
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-xl font-bold text-white">
                   SMT Paste Tracker
                 </h1>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-neutral-400">
                   Sistema de Trazabilidad de Pastas de Soldadura
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-neutral-400">
                 {new Date().toLocaleDateString('es-MX', {
                   weekday: 'long',
                   year: 'numeric',
@@ -89,7 +89,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs Navigation */}
-        <div className="bg-white rounded-lg shadow-sm mb-6">
+        <div className="bg-neutral-800 rounded-lg shadow-sm mb-6 border border-neutral-700">
           <div className="px-6">
             <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
           </div>
@@ -100,71 +100,71 @@ export default function Home() {
           {activeTab === 'fridge-in' && <FridgeInTab />}
           {activeTab === 'reports' && <ReportsTab />}
           {activeTab === 'settings' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">
                 Configuración
               </h2>
               <div className="space-y-6">
                 {/* Configuración de viscosidad */}
-                <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">
+                <div className="border-b border-neutral-700 pb-6">
+                  <h3 className="text-sm font-medium text-white mb-2">
                     Rango de Viscosidad Válido
                   </h3>
                   <div className="flex items-center space-x-4">
                     <div>
-                      <label className="block text-xs text-gray-500">Mínimo</label>
+                      <label className="block text-xs text-neutral-400">Mínimo</label>
                       <input
                         type="number"
                         defaultValue={150}
-                        className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                        className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                         disabled
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500">Máximo</label>
+                      <label className="block text-xs text-neutral-400">Máximo</label>
                       <input
                         type="number"
                         defaultValue={180}
-                        className="mt-1 block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                        className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                         disabled
                       />
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-gray-500">
+                  <p className="mt-2 text-xs text-neutral-400">
                     El rango de viscosidad está configurado en el código. Contacte al administrador para modificarlo.
                   </p>
                 </div>
 
                 {/* Información de conexión */}
-                <div className="border-b border-gray-200 pb-6">
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">
+                <div className="border-b border-neutral-700 pb-6">
+                  <h3 className="text-sm font-medium text-white mb-2">
                     Base de Datos
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-neutral-300">
                     Conexión a MySQL configurada en variables de entorno.
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-neutral-400 mt-1">
                     Ver archivo .env.local para configuración.
                   </p>
                 </div>
 
                 {/* Formato QR */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 mb-2">
+                  <h3 className="text-sm font-medium text-white mb-2">
                     Formato de Código QR
                   </h3>
-                  <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono text-gray-700">
+                  <div className="bg-neutral-700 rounded-lg p-4 text-sm font-mono text-neutral-200">
                     <p className="mb-2">Formato esperado (5 campos separados por comas):</p>
-                    <p className="text-blue-600">lote,parte,expiración,fabricación,serial</p>
-                    <p className="mt-2 text-gray-500">Ejemplo:</p>
-                    <p className="text-green-600">50822985,k01.005-00m-2,260218,250909,017</p>
+                    <p className="text-blue-400">lote,parte,expiración,fabricación,serial</p>
+                    <p className="mt-2 text-neutral-400">Ejemplo:</p>
+                    <p className="text-green-400">50822985,k01.005-00m-2,260218,250909,017</p>
                   </div>
-                  <div className="mt-4 text-xs text-gray-500">
-                    <p><strong>Posición 1:</strong> Número de lote</p>
-                    <p><strong>Posición 2:</strong> Número de parte</p>
-                    <p><strong>Posición 3:</strong> Fecha expiración (YYMMDD)</p>
-                    <p><strong>Posición 4:</strong> Fecha fabricación (YYMMDD)</p>
-                    <p><strong>Posición 5:</strong> Serial del lote</p>
+                  <div className="mt-4 text-xs text-neutral-400">
+                    <p><strong className="text-neutral-300">Posición 1:</strong> Número de lote</p>
+                    <p><strong className="text-neutral-300">Posición 2:</strong> Número de parte</p>
+                    <p><strong className="text-neutral-300">Posición 3:</strong> Fecha expiración (YYMMDD)</p>
+                    <p><strong className="text-neutral-300">Posición 4:</strong> Fecha fabricación (YYMMDD)</p>
+                    <p><strong className="text-neutral-300">Posición 5:</strong> Serial del lote</p>
                   </div>
                 </div>
               </div>
@@ -174,9 +174,9 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-8">
+      <footer className="bg-neutral-800 border-t border-neutral-700 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-neutral-400">
             SMT Paste Tracker - Sistema de Trazabilidad v1.0
           </p>
         </div>
