@@ -9,6 +9,23 @@
 import { ParsedQRData } from '@/types';
 
 /**
+ * Sanitiza la entrada del escáner reemplazando caracteres mal interpretados
+ * El escáner puede interpretar guiones (-) como apóstrofes (')
+ * @param input - Cadena de entrada del escáner
+ * @returns Cadena sanitizada con apóstrofes reemplazados por guiones
+ */
+export function sanitizeScannerInput(input: string): string {
+  // Reemplazar apóstrofes (') por guiones (-)
+  // También reemplazar otros caracteres similares que podrían ser mal interpretados
+  return input
+    .replace(/'/g, '-')      // Apóstrofe simple
+    .replace(/'/g, '-')      // Apóstrofe curvo izquierdo
+    .replace(/'/g, '-')      // Apóstrofe curvo derecho
+    .replace(/`/g, '-')      // Acento grave
+    .replace(/´/g, '-');     // Acento agudo
+}
+
+/**
  * Convierte fecha de formato YYMMDD a YYYY-MM-DD
  * @param yymmdd - Fecha en formato YYMMDD (ej: 260218)
  * @returns Fecha en formato ISO YYYY-MM-DD
@@ -49,8 +66,11 @@ export function parseYYMMDD(yymmdd: string): string {
  * @returns Datos parseados y validados
  */
 export function parseQRCode(qrContent: string): ParsedQRData {
+  // Sanitizar la entrada del escáner primero (reemplazar apóstrofes por guiones)
+  const sanitizedContent = sanitizeScannerInput(qrContent);
+  
   // Limpiar espacios en blanco
-  const cleanContent = qrContent.trim();
+  const cleanContent = sanitizedContent.trim();
   
   // Separar por comas
   const parts = cleanContent.split(',');
@@ -74,6 +94,29 @@ export function parseQRCode(qrContent: string): ParsedQRData {
   // Convertir fechas
   const expirationDate = parseYYMMDD(expirationRaw.trim());
   const manufactureDate = parseYYMMDD(manufactureRaw.trim());
+
+  // =====================================================
+  // VALIDACIÓN DE PASTA VENCIDA
+  // =====================================================
+  // Verificar que la pasta no esté vencida al momento del escaneo
+  const expDate = new Date(expirationDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  expDate.setHours(0, 0, 0, 0);
+
+  if (expDate < today) {
+    const formattedExpDate = expDate.toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    throw new Error(
+      `⚠️ PASTA VENCIDA\n\n` +
+      `No se puede registrar esta pasta.\n\n` +
+      `Fecha de expiración: ${formattedExpDate}\n\n` +
+      `Por favor, deseche esta pasta y utilice una con fecha de expiración válida.`
+    );
+  }
 
   return {
     lotNumber: lotNumber.trim(),

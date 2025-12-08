@@ -5,12 +5,13 @@
  * Campo de entrada para escanear códigos QR
  * SIEMPRE está escuchando - mantiene el foco automáticamente
  * Detecta automáticamente cuando se completa un escaneo
+ * El escáner trabaja en segundo plano sin indicadores visuales prominentes
  */
 
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { QrCodeIcon, SignalIcon } from '@heroicons/react/24/outline';
+import { QrCodeIcon } from '@heroicons/react/24/outline';
 
 interface QRScannerInputProps {
   onScan: (qrData: string) => void;
@@ -25,12 +26,11 @@ export default function QRScannerInput({
 }: QRScannerInputProps) {
   const [value, setValue] = useState('');
   const [isScanning, setIsScanning] = useState(false);
-  const [isListening, setIsListening] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const refocusIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Función para mantener el foco
+  // Función para mantener el foco - siempre activa en segundo plano
   const maintainFocus = useCallback(() => {
     if (inputRef.current && !disabled && document.activeElement !== inputRef.current) {
       // Solo re-enfocar si no hay un modal abierto (verificar si hay overlay)
@@ -53,7 +53,7 @@ export default function QRScannerInput({
     }, 500);
 
     // También re-enfocar cuando se hace clic en cualquier parte de la página
-    const handleClick = (e: MouseEvent) => {
+    const handleClick = () => {
       // Pequeño delay para permitir que otros elementos procesen el clic primero
       setTimeout(() => {
         maintainFocus();
@@ -78,16 +78,6 @@ export default function QRScannerInput({
       window.removeEventListener('focus', handleWindowFocus);
     };
   }, [maintainFocus]);
-
-  // Actualizar estado de escucha
-  useEffect(() => {
-    const checkFocus = () => {
-      setIsListening(document.activeElement === inputRef.current);
-    };
-
-    const interval = setInterval(checkFocus, 200);
-    return () => clearInterval(interval);
-  }, []);
 
   // Procesar el escaneo con debounce
   const processInput = useCallback(
@@ -146,28 +136,12 @@ export default function QRScannerInput({
 
   return (
     <div className="relative">
-      {/* Indicador de estado de escucha */}
-      <div className="absolute -top-2 -right-2 z-10">
-        <span className={`
-          inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-          ${isListening 
-            ? 'bg-green-900/70 text-green-300 border border-green-700' 
-            : 'bg-yellow-900/70 text-yellow-300 border border-yellow-700'
-          }
-        `}>
-          <SignalIcon className={`h-3 w-3 mr-1 ${isListening ? 'animate-pulse' : ''}`} />
-          {isListening ? 'Escuchando' : 'Click para activar'}
-        </span>
-      </div>
-
       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
         <QrCodeIcon
           className={`h-5 w-5 ${
             isScanning 
               ? 'animate-pulse text-blue-400' 
-              : isListening 
-                ? 'text-green-400' 
-                : 'text-neutral-500'
+              : 'text-green-400'
           }`}
         />
       </div>
@@ -190,21 +164,15 @@ export default function QRScannerInput({
           disabled:cursor-not-allowed disabled:bg-neutral-800 disabled:text-neutral-500
           ${isScanning 
             ? 'border-blue-500 ring-2 ring-blue-500/30 bg-neutral-700' 
-            : isListening
-              ? 'border-green-600 bg-neutral-700 ring-1 ring-green-500/20'
-              : 'border-neutral-600 bg-neutral-700'
+            : 'border-green-600 bg-neutral-700 ring-1 ring-green-500/20'
           }
         `}
       />
-      {isScanning ? (
+      {isScanning && (
         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
           <span className="text-xs text-blue-400 animate-pulse">Escaneando...</span>
         </div>
-      ) : isListening ? (
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-          <span className="text-xs text-green-400">● Listo para escanear</span>
-        </div>
-      ) : null}
+      )}
     </div>
   );
 }

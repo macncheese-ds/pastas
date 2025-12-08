@@ -110,6 +110,101 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // =====================================================
+    // VALIDACIÓN DE PASTA VENCIDA
+    // =====================================================
+    // No permitir registrar pastas cuya fecha de expiración ya pasó
+    const expirationDate = new Date(body.expiration_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expirationDate.setHours(0, 0, 0, 0);
+
+    if (expirationDate < today) {
+      const formattedExpDate = expirationDate.toLocaleDateString('es-MX', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      return NextResponse.json<ApiResponse>(
+        {
+          success: false,
+          error: `⚠️ No se puede registrar una pasta vencida.\n\nFecha de expiración: ${formattedExpDate}\n\nPor favor, deseche esta pasta y utilice una con fecha de expiración válida.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // =====================================================
+    // VALIDACIÓN DE PARTE-LÍNEA
+    // =====================================================
+    // Si hay una ubicación SMT, validar que el número de parte esté autorizado
+    if (body.smt_location) {
+      // Mapear SMT location a número de línea
+      const smtToLineMap: Record<string, number> = {
+        'SMT': 1,
+        'SMT2': 2,
+        'SMT3': 3,
+        'SMT4': 4,
+      };
+      const lineNumber = smtToLineMap[body.smt_location];
+
+      if (lineNumber) {
+        // Buscar si el número de parte existe en la tabla de partes
+        const partNumberRecord = await query<RowDataPacket[]>(
+          `SELECT id FROM part_numbers WHERE UPPER(part_number) = ? AND is_active = TRUE`,
+          [body.part_number.trim().toUpperCase()]
+        );
+
+        // Solo validar si el número de parte está registrado en el sistema
+        if (partNumberRecord.length > 0) {
+          const partNumberId = partNumberRecord[0].id;
+
+          // Buscar la línea de producción
+          const productionLine = await query<RowDataPacket[]>(
+            `SELECT id, line_name FROM production_lines WHERE line_number = ? AND is_active = TRUE`,
+            [lineNumber]
+          );
+
+          if (productionLine.length > 0) {
+            const productionLineId = productionLine[0].id;
+            const lineName = productionLine[0].line_name;
+
+            // Verificar asignación
+            const assignment = await query<RowDataPacket[]>(
+              `SELECT id FROM part_line_assignments 
+               WHERE part_number_id = ? AND production_line_id = ? AND is_valid = TRUE`,
+              [partNumberId, productionLineId]
+            );
+
+            if (assignment.length === 0) {
+              // Obtener líneas válidas para este número de parte
+              const validLines = await query<RowDataPacket[]>(
+                `SELECT pl.line_number, pl.line_name
+                 FROM part_line_assignments pla
+                 JOIN production_lines pl ON pla.production_line_id = pl.id
+                 WHERE pla.part_number_id = ? AND pla.is_valid = TRUE AND pl.is_active = TRUE
+                 ORDER BY pl.line_number`,
+                [partNumberId]
+              );
+
+              const validLinesText = validLines.length > 0
+                ? `Líneas autorizadas: ${validLines.map(l => l.line_name).join(', ')}`
+                : 'No hay líneas autorizadas para este número de parte';
+
+              return NextResponse.json<ApiResponse>(
+                {
+                  success: false,
+                  error: `⚠️ El número de parte ${body.part_number} NO está autorizado para ${lineName}. ${validLinesText}`,
+                },
+                { status: 400 }
+              );
+            }
+          }
+        }
+      }
+    }
+    // =====================================================
+
     // Verificar si ya existe
     const existing = await query<RowDataPacket[]>(
       `SELECT id FROM solder_paste 

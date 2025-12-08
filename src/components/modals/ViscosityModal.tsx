@@ -39,10 +39,16 @@ export default function ViscosityModal({
 
   // Limpiar al cerrar
   useEffect(() => {
+    let t: number | undefined;
     if (!isOpen) {
-      setViscosity('');
-      setError('');
+      t = window.setTimeout(() => {
+        setViscosity('');
+        setError('');
+      }, 0);
     }
+    return () => {
+      if (t) clearTimeout(t);
+    };
   }, [isOpen]);
 
   if (!paste) return null;

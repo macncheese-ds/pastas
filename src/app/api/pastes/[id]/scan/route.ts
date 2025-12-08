@@ -26,6 +26,7 @@ const VALID_TRANSITIONS: Record<SolderPasteStatus, { nextStatus: SolderPasteStat
 interface ScanRequestBody {
   scan_type: ScanType;
   viscosity_value?: number;
+  smt_location?: string;
 }
 
 /**
@@ -88,6 +89,60 @@ export async function POST(
             { status: 400 }
           );
         }
+        
+        // =====================================================
+        // VALIDACIÓN FEFO (First Expired, First Out)
+        // =====================================================
+        // Verificar si existen pastas en el refrigerador con fecha de
+        // expiración anterior (más próximas a caducar) que deben usarse primero
+        const earlierExpiringPastes = await query<RowDataPacket[]>(
+          `SELECT id, lot_number, lot_serial, expiration_date, part_number
+           FROM solder_paste 
+           WHERE status = 'in_fridge' 
+             AND id != ? 
+             AND expiration_date < ?
+             AND part_number = ?
+           ORDER BY expiration_date ASC
+           LIMIT 5`,
+          [pasteId, paste.expiration_date, paste.part_number]
+        );
+
+        if (earlierExpiringPastes.length > 0) {
+          // Formatear la lista de pastas que deben usarse primero
+          const pastesList = earlierExpiringPastes.map((p) => {
+            const expDate = new Date(p.expiration_date);
+            const formattedDate = expDate.toLocaleDateString('es-MX', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            });
+            return `• Lote ${p.lot_number}-${p.lot_serial} (Vence: ${formattedDate})`;
+          }).join('\n');
+
+          const currentExpDate = new Date(paste.expiration_date);
+          const currentFormattedDate = currentExpDate.toLocaleDateString('es-MX', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          });
+
+          return NextResponse.json<ApiResponse<{ 
+            fefoViolation: boolean; 
+            earlierExpiringPastes: typeof earlierExpiringPastes 
+          }>>(
+            { 
+              success: false, 
+              error: `⚠️ FEFO: Existen ${earlierExpiringPastes.length} pasta(s) con fecha de vencimiento anterior que deben usarse primero.\n\nPasta actual: Lote ${paste.lot_number}-${paste.lot_serial} (Vence: ${currentFormattedDate})\n\nDeben usarse primero:\n${pastesList}`,
+              data: {
+                fefoViolation: true,
+                earlierExpiringPastes: earlierExpiringPastes
+              }
+            },
+            { status: 400 }
+          );
+        }
+        // =====================================================
+        
         updateQuery = `UPDATE solder_paste SET 
           fridge_out_datetime = NOW(), 
           status = 'out_fridge'
@@ -215,20 +270,30 @@ export async function POST(
         break;
 
       case 'opened':
-        // Escaneo 5: Apertura del contenedor
+        // Escaneo 5: Apertura del contenedor - Se asigna la línea SMT
         if (currentStatus !== 'viscosity_ok') {
           return NextResponse.json<ApiResponse>(
             { success: false, error: `No se puede registrar apertura. Estado actual: ${currentStatus}` },
             { status: 400 }
           );
         }
+        
+        // Validar que se proporcione la línea SMT
+        if (!body.smt_location) {
+          return NextResponse.json<ApiResponse>(
+            { success: false, error: 'Debe seleccionar una línea de producción (SMT)' },
+            { status: 400 }
+          );
+        }
+        
         updateQuery = `UPDATE solder_paste SET 
           opened_datetime = NOW(), 
+          smt_location = ?,
           status = 'opened'
           WHERE id = ?`;
-        updateParams = [pasteId];
+        updateParams = [body.smt_location, pasteId];
         newStatus = 'opened';
-        logNotes = 'Contenedor abierto';
+        logNotes = `Contenedor abierto - Línea: ${body.smt_location}`;
         break;
 
       case 'removed':

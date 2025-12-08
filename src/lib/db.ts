@@ -13,13 +13,13 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || '6235642',
   database: process.env.DB_NAME || 'solder_paste_db',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  // Configuración de zona horaria
-  timezone: '+00:00',
+  // Configuración de zona horaria (México Central - CST/CDT)
+  timezone: '-06:00',
   // Convertir fechas automáticamente
   dateStrings: false,
 });

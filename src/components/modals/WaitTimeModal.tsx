@@ -33,7 +33,8 @@ export default function WaitTimeModal({
   useEffect(() => {
     if (!isOpen || initialRemainingMs <= 0) return;
 
-    setRemainingMs(initialRemainingMs);
+    let t: number | undefined;
+    t = window.setTimeout(() => setRemainingMs(initialRemainingMs), 0);
 
     const interval = setInterval(() => {
       setRemainingMs((prev) => {
@@ -45,8 +46,7 @@ export default function WaitTimeModal({
         return newVal;
       });
     }, 1000);
-
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); if (t) clearTimeout(t); };
   }, [isOpen, initialRemainingMs]);
 
   if (!paste) return null;
@@ -67,7 +67,7 @@ export default function WaitTimeModal({
     : null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="⏰ Tiempo de Espera Requerido" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Tiempo de Espera Requerido" size="lg">
       <div className="space-y-6">
         {/* Alerta principal */}
         <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
@@ -154,8 +154,8 @@ export default function WaitTimeModal({
         {/* Mensaje adicional */}
         {remainingMs <= 0 && (
           <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-            <p className="text-sm text-green-800 font-medium">
-              ✅ ¡El tiempo de espera ha terminado! Puede volver a escanear para iniciar el mezclado.
+              <p className="text-sm text-green-800 font-medium">
+              ¡El tiempo de espera ha terminado! Puede volver a escanear para iniciar el mezclado.
             </p>
           </div>
         )}

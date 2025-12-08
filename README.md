@@ -3,20 +3,20 @@
 
 Aplicación web fullstack para el control y trazabilidad de pastas de soldadura SMT con sistema de escaneo QR.
 
-## 🚀 Stack Tecnológico
+## Stack Tecnológico
 
 - **Frontend**: React con Next.js 14 (App Router)
 - **Base de Datos**: MySQL
 - **Estilos**: Tailwind CSS
 - **Iconos**: Heroicons
 
-## 📋 Requisitos Previos
+## Requisitos Previos
 
 - Node.js 18+
 - MySQL 8.0+
 - npm o yarn
 
-## 🛠️ Instalación
+## Instalación
 
 ### 1. Clonar/Descargar el proyecto
 
@@ -67,7 +67,7 @@ npm run dev
 
 La aplicación estará disponible en: http://localhost:3000
 
-## 📱 Uso de la Aplicación
+## Uso de la Aplicación
 
 ### Pestaña "Fridge In" - Flujo de Escaneos
 
@@ -82,7 +82,7 @@ El sistema maneja 6 escaneos secuenciales para cada pasta:
 | 5 | Apertura | Registra apertura del contenedor |
 | 6 | Retiro | Registra retiro final |
 
-### ⚠️ Reglas de Negocio Importantes
+### Reglas de Negocio Importantes
 
 #### 1. DID Obligatorio
 Al registrar una nueva pasta (primer escaneo), el sistema solicita que se ingrese un **DID** (Document Identification). Este campo es obligatorio y no se puede registrar una pasta sin él.
@@ -100,7 +100,7 @@ El sistema detecta automáticamente la ubicación de línea SMT basándose en el
 | k05., k06., c01., c02. | SMT3 |
 | k07., k08., d01., d02. | SMT4 |
 
-> 📝 Los mapeos se pueden modificar en `src/config/smtMapping.ts`
+> Los mapeos se pueden modificar en `src/config/smtMapping.ts`
 
 ### Formato del Código QR
 
@@ -133,15 +133,15 @@ lote,parte,expiración,fabricación,serial
 
 | Estado | Color | Descripción |
 |--------|-------|-------------|
-| En Refrigerador | 🔵 Azul | Pasta almacenada en frío |
-| Fuera de Refrigerador | 🟡 Amarillo | Fuera del refrigerador, esperando 4 horas |
-| Mezclando | 🟠 Naranja | En proceso de mezclado |
-| Viscosidad OK | 🟢 Verde | Viscosidad aprobada |
-| Abierto | 🟣 Púrpura | Contenedor abierto |
-| Retirado | ⚫ Gris | Proceso completado |
-| Rechazado | 🔴 Rojo | Viscosidad fuera de rango, requiere re-mezclado |
+| En Refrigerador | Azul | Pasta almacenada en frío |
+| Fuera de Refrigerador | Amarillo | Fuera del refrigerador, esperando 4 horas |
+| Mezclando | Naranja | En proceso de mezclado |
+| Viscosidad OK | Verde | Viscosidad aprobada |
+| Abierto | Púrpura | Contenedor abierto |
+| Retirado | Gris | Proceso completado |
+| Rechazado | Rojo | Viscosidad fuera de rango, requiere re-mezclado |
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 pastas/
@@ -179,7 +179,7 @@ pastas/
 │   │       ├── StatusBadge.tsx        # Badge de estado
 │   │       └── ShelfLifeIndicator.tsx # Indicador vida útil
 │   ├── config/
-│   │   └── smtMapping.ts              # ⭐ Configuración mapeo SMT
+│   │   └── smtMapping.ts              # Configuración mapeo SMT
 │   ├── lib/
 │   │   ├── db.ts                      # Conexión MySQL
 │   │   └── qrParser.ts                # Parser de QR
@@ -190,7 +190,7 @@ pastas/
 └── README.md
 ```
 
-## 🔧 Scripts Disponibles
+## Scripts Disponibles
 
 ```bash
 # Desarrollo
@@ -206,18 +206,18 @@ npm run start
 npm run lint
 ```
 
-## 📊 Base de Datos
+## Base de Datos
 
 ### Tabla `solder_paste`
 
 | Campo | Tipo | Descripción |
 |-------|------|-------------|
 | id | INT | ID autoincremental |
-| did | VARCHAR(100) | **⭐ Document Identification (obligatorio)** |
+| did | VARCHAR(100) | **Document Identification (obligatorio)** |
 | lot_number | VARCHAR(50) | Número de lote |
 | part_number | VARCHAR(100) | Número de parte |
 | lot_serial | VARCHAR(20) | Serial del lote |
-| smt_location | ENUM | **⭐ Línea SMT (SMT, SMT2, SMT3, SMT4)** |
+| smt_location | ENUM | **Línea SMT (SMT, SMT2, SMT3, SMT4)** |
 | manufacture_date | DATE | Fecha de fabricación |
 | expiration_date | DATE | Fecha de expiración |
 | fridge_in_datetime | DATETIME | Entrada al refrigerador |
@@ -256,6 +256,6 @@ export const SMT_PREFIX_MAP: Record<string, SMTLocation> = {
 
 También se pueden agregar mapeos exactos o por expresiones regulares en el mismo archivo.
 
-## 📝 Licencia
+## Licencia
 
 MIT

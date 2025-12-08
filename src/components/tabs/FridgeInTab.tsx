@@ -10,18 +10,21 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import QRScannerInput from '@/components/scanner/QRScannerInput';
-import PasteTable from '@/components/table/PasteTable';
+import PasteTableWithTabs from '@/components/table/PasteTableWithTabs';
 import NewPasteModal from '@/components/modals/NewPasteModal';
 import ScanActionModal from '@/components/modals/ScanActionModal';
 import ViscosityModal from '@/components/modals/ViscosityModal';
 import CompletedModal from '@/components/modals/CompletedModal';
 import WaitTimeModal from '@/components/modals/WaitTimeModal';
-import { SolderPaste, ParsedQRData, ApiResponse, ScanType } from '@/types';
+import ManualEntryModal from '@/components/modals/ManualEntryModal';
+import OpenPasteModal from '@/components/modals/OpenPasteModal';
+import { SolderPaste, ParsedQRData, ApiResponse, ScanType, SMTLocation } from '@/types';
 import { parseQRCode } from '@/lib/qrParser';
 import { detectSMTLocation } from '@/config/smtMapping';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
 
 // Tipos de modal
-type ModalType = 'new' | 'action' | 'viscosity' | 'completed' | 'error' | 'waitTime' | null;
+type ModalType = 'new' | 'action' | 'viscosity' | 'completed' | 'error' | 'waitTime' | 'manual' | 'openPaste' | null;
 
 export default function FridgeInTab() {
   // Estado de datos
@@ -95,8 +98,8 @@ export default function FridgeInTab() {
             setActiveModal('viscosity');
             break;
           case 'viscosity_ok':
-            // Escaneo 5: Apertura
-            setActiveModal('action');
+            // Escaneo 5: Apertura - Mostrar modal para seleccionar línea SMT
+            setActiveModal('openPaste');
             break;
           case 'opened':
             // Escaneo 6: Retiro
@@ -121,7 +124,7 @@ export default function FridgeInTab() {
     }
   };
 
-  // Crear nuevo registro con DID
+  // Crear nuevo registro con DID (la línea SMT se asigna al abrir)
   const handleCreatePaste = async (did: string) => {
     if (!parsedQR) return;
 
@@ -137,7 +140,7 @@ export default function FridgeInTab() {
           lot_serial: parsedQR.lotSerial,
           manufacture_date: parsedQR.manufactureDate,
           expiration_date: parsedQR.expirationDate,
-          smt_location: parsedQR.smtLocation,
+          smt_location: null, // La línea se asigna cuando se abre la pasta
         }),
       });
 
@@ -215,6 +218,44 @@ export default function FridgeInTab() {
     } catch (error) {
       console.error('Error processing scan:', error);
       setErrorMessage('Error de conexión al procesar el escaneo');
+      setActiveModal('error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Procesar apertura de pasta con línea SMT seleccionada
+  const handleOpenPaste = async (smtLocation: SMTLocation) => {
+    if (!selectedPaste) return;
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scan_type: 'opened',
+          smt_location: smtLocation,
+        }),
+      });
+
+      const data: ApiResponse<SolderPaste> = await response.json();
+
+      if (data.success && data.data) {
+        // Actualizar en la lista
+        const updatedPaste = data.data;
+        setPastes((prev) =>
+          prev.map((p) => (p.id === updatedPaste.id ? updatedPaste : p))
+        );
+        setActiveModal(null);
+        setSelectedPaste(null);
+      } else {
+        setErrorMessage(data.error || 'Error al abrir la pasta');
+        setActiveModal('error');
+      }
+    } catch (error) {
+      console.error('Error opening paste:', error);
+      setErrorMessage('Error de conexión al abrir la pasta');
       setActiveModal('error');
     } finally {
       setIsProcessing(false);
@@ -309,30 +350,39 @@ export default function FridgeInTab() {
       <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white">
-            Escáner QR Activo
+            Escáner QR
           </h2>
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-900/50 text-green-300 border border-green-700">
-            <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-            Siempre escuchando
-          </span>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setActiveModal('manual')}
+              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-300 bg-blue-900/50 hover:bg-blue-900/70 border border-blue-700 rounded-lg transition-colors"
+            >
+              <PencilSquareIcon className="h-4 w-4 mr-1.5" />
+              Entrada Manual
+            </button>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-900/50 text-green-300 border border-green-700">
+              <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+              Siempre escuchando
+            </span>
+          </div>
         </div>
         <QRScannerInput
           onScan={handleScan}
           placeholder="Apunte el escáner al código QR - detección automática..."
         />
         <p className="mt-3 text-sm text-neutral-400">
-          📡 El sistema detecta automáticamente los escaneos. Solo apunte el lector al código QR.
+          📡 El sistema detecta automáticamente los escaneos. Use "Entrada Manual" si el escáner no funciona.
         </p>
       </div>
 
-      {/* Tabla de registros */}
+      {/* Tabla de registros con pestañas */}
       <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700">
         <div className="px-6 py-4 border-b border-neutral-700">
           <h2 className="text-lg font-semibold text-white">
             Registros de Pasta
           </h2>
         </div>
-        <PasteTable
+        <PasteTableWithTabs
           pastes={pastes}
           onView={handleViewPaste}
           onDelete={handleDeletePaste}
@@ -378,6 +428,22 @@ export default function FridgeInTab() {
         remainingMs={waitTimeRemaining}
       />
 
+      {/* Modal de apertura con selección de línea SMT */}
+      <OpenPasteModal
+        isOpen={activeModal === 'openPaste'}
+        onClose={closeModal}
+        onConfirm={handleOpenPaste}
+        paste={selectedPaste}
+        isLoading={isProcessing}
+      />
+
+      {/* Modal de entrada manual */}
+      <ManualEntryModal
+        isOpen={activeModal === 'manual'}
+        onClose={closeModal}
+        onSubmit={handleScan}
+      />
+
       {/* Modal de error */}
       {activeModal === 'error' && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -391,7 +457,7 @@ export default function FridgeInTab() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-white mb-2">Error</h3>
-                <p className="text-sm text-neutral-400 mb-4">{errorMessage}</p>
+                <p className="text-sm text-neutral-400 mb-4 whitespace-pre-line">{errorMessage}</p>
                 <button
                   onClick={closeModal}
                   className="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"

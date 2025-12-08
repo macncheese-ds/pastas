@@ -3,7 +3,8 @@
  * Componente: Modal de Nuevo Registro
  * =====================================================
  * Modal para confirmar y registrar una nueva pasta
- * Incluye campo obligatorio DID y detección de ubicación SMT
+ * Incluye campo obligatorio DID
+ * La línea SMT se asigna después, al momento de abrir la pasta
  */
 
 'use client';
@@ -11,14 +12,14 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import ShelfLifeIndicator from '@/components/ui/ShelfLifeIndicator';
-import { ParsedQRData, SMTLocation } from '@/types';
+import { ParsedQRData } from '@/types';
 import { formatDate } from '@/lib/qrParser';
 import { 
   CheckCircleIcon, 
   XCircleIcon, 
   DocumentTextIcon,
-  MapPinIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
 interface NewPasteModalProps {
@@ -28,14 +29,6 @@ interface NewPasteModalProps {
   parsedData: ParsedQRData | null;
   isLoading?: boolean;
 }
-
-// Colores para cada ubicación SMT
-const SMT_LOCATION_COLORS: Record<SMTLocation, string> = {
-  'SMT': 'bg-blue-900/50 text-blue-300 border-blue-700',
-  'SMT2': 'bg-green-900/50 text-green-300 border-green-700',
-  'SMT3': 'bg-purple-900/50 text-purple-300 border-purple-700',
-  'SMT4': 'bg-orange-900/50 text-orange-300 border-orange-700',
-};
 
 export default function NewPasteModal({
   isOpen,
@@ -49,10 +42,16 @@ export default function NewPasteModal({
 
   // Limpiar DID al cerrar el modal
   useEffect(() => {
+    let t: number | undefined;
     if (!isOpen) {
-      setDid('');
-      setDidError('');
+      t = window.setTimeout(() => {
+        setDid('');
+        setDidError('');
+      }, 0);
     }
+    return () => {
+      if (t) clearTimeout(t);
+    };
   }, [isOpen]);
 
   if (!parsedData) return null;
@@ -113,19 +112,6 @@ export default function NewPasteModal({
             </p>
           )}
         </div>
-
-        {/* Ubicación SMT detectada */}
-        {parsedData.smtLocation && (
-          <div className="flex items-center justify-between rounded-lg border border-neutral-700 p-4">
-            <div className="flex items-center">
-              <MapPinIcon className="h-5 w-5 text-neutral-400 mr-2" />
-              <span className="text-sm font-medium text-neutral-300">Ubicación SMT detectada:</span>
-            </div>
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${SMT_LOCATION_COLORS[parsedData.smtLocation]}`}>
-              {parsedData.smtLocation}
-            </span>
-          </div>
-        )}
 
         {/* Datos del QR */}
         <div className="grid grid-cols-2 gap-4">

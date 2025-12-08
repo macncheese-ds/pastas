@@ -97,3 +97,87 @@ CREATE TABLE IF NOT EXISTS scan_log (
     FOREIGN KEY (solder_paste_id) REFERENCES solder_paste(id) ON DELETE CASCADE,
     INDEX idx_paste_scan (solder_paste_id, scan_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Tabla de números de parte válidos
+-- =====================================================
+CREATE TABLE IF NOT EXISTS part_numbers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    part_number VARCHAR(100) NOT NULL UNIQUE COMMENT 'Número de parte único',
+    description VARCHAR(255) NULL COMMENT 'Descripción opcional del número de parte',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Si el número de parte está activo',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_part_number (part_number),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Tabla de líneas de producción
+-- =====================================================
+CREATE TABLE IF NOT EXISTS production_lines (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    line_number INT NOT NULL UNIQUE COMMENT 'Número de línea (1, 2, 3, 4...)',
+    line_name VARCHAR(50) NOT NULL COMMENT 'Nombre descriptivo de la línea',
+    smt_location VARCHAR(20) NULL COMMENT 'Ubicación SMT asociada',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Si la línea está activa',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_line_number (line_number),
+    INDEX idx_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Tabla de asignación de números de parte a líneas
+-- Relación muchos a muchos
+-- =====================================================
+CREATE TABLE IF NOT EXISTS part_line_assignments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    part_number_id INT NOT NULL,
+    production_line_id INT NOT NULL,
+    is_valid BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Si la asignación es válida',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (part_number_id) REFERENCES part_numbers(id) ON DELETE CASCADE,
+    FOREIGN KEY (production_line_id) REFERENCES production_lines(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_part_line (part_number_id, production_line_id),
+    INDEX idx_part_line (part_number_id, production_line_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- Datos iniciales: Líneas de producción
+-- =====================================================
+INSERT INTO production_lines (line_number, line_name, smt_location, is_active) VALUES
+(1, 'Línea 1', 'SMT', TRUE),
+(2, 'Línea 2', 'SMT2', TRUE),
+(3, 'Línea 3', 'SMT3', TRUE),
+(4, 'Línea 4', 'SMT4', TRUE)
+ON DUPLICATE KEY UPDATE line_name = VALUES(line_name);
+
+-- =====================================================
+-- Datos iniciales: Números de parte (de las imágenes proporcionadas)
+-- =====================================================
+INSERT INTO part_numbers (part_number, description, is_active) VALUES
+('K01.005-00M-2', 'Pasta de soldadura estándar', TRUE),
+('611.001-17M', 'Pasta de soldadura tipo 611', TRUE),
+('K01.027-00M', 'Pasta de soldadura K01.027', TRUE)
+ON DUPLICATE KEY UPDATE description = VALUES(description);
+
+-- =====================================================
+-- Datos iniciales: Asignaciones de partes a líneas (de las imágenes)
+-- Línea 1: K01.005-00M-2, 611.001-17M
+-- Línea 2: K01.005-00M-2
+-- Línea 3: K01.005-00M-2
+-- Línea 4: K01.005-00M-2, K01.027-00M
+-- =====================================================
+INSERT INTO part_line_assignments (part_number_id, production_line_id, is_valid)
+SELECT pn.id, pl.id, TRUE
+FROM part_numbers pn, production_lines pl
+WHERE 
+    (pn.part_number = 'K01.005-00M-2' AND pl.line_number IN (1, 2, 3, 4)) OR
+    (pn.part_number = '611.001-17M' AND pl.line_number = 1) OR
+    (pn.part_number = 'K01.027-00M' AND pl.line_number = 4)
+ON DUPLICATE KEY UPDATE is_valid = TRUE;

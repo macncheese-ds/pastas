@@ -11,6 +11,7 @@ import { useState } from 'react';
 import Tabs from '@/components/ui/Tabs';
 import FridgeInTab from '@/components/tabs/FridgeInTab';
 import ReportsTab from '@/components/tabs/ReportsTab';
+import PartNumbersConfig from '@/components/config/PartNumbersConfig';
 import {
   HomeIcon,
   ChartBarIcon,
@@ -100,71 +101,79 @@ export default function Home() {
           {activeTab === 'fridge-in' && <FridgeInTab />}
           {activeTab === 'reports' && <ReportsTab />}
           {activeTab === 'settings' && (
-            <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">
-                Configuración
-              </h2>
-              <div className="space-y-6">
-                {/* Configuración de viscosidad */}
-                <div className="border-b border-neutral-700 pb-6">
-                  <h3 className="text-sm font-medium text-white mb-2">
-                    Rango de Viscosidad Válido
-                  </h3>
-                  <div className="flex items-center space-x-4">
-                    <div>
-                      <label className="block text-xs text-neutral-400">Mínimo</label>
-                      <input
-                        type="number"
-                        defaultValue={150}
-                        className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                        disabled
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-neutral-400">Máximo</label>
-                      <input
-                        type="number"
-                        defaultValue={180}
-                        className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                        disabled
-                      />
-                    </div>
-                  </div>
-                  <p className="mt-2 text-xs text-neutral-400">
-                    El rango de viscosidad está configurado en el código. Contacte al administrador para modificarlo.
-                  </p>
-                </div>
+            <div className="space-y-6">
+              {/* Configuración de Números de Parte y Líneas */}
+              <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
+                <PartNumbersConfig />
+              </div>
 
-                {/* Información de conexión */}
-                <div className="border-b border-neutral-700 pb-6">
-                  <h3 className="text-sm font-medium text-white mb-2">
-                    Base de Datos
-                  </h3>
-                  <p className="text-sm text-neutral-300">
-                    Conexión a MySQL configurada en variables de entorno.
-                  </p>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    Ver archivo .env.local para configuración.
-                  </p>
-                </div>
-
-                {/* Formato QR */}
-                <div>
-                  <h3 className="text-sm font-medium text-white mb-2">
-                    Formato de Código QR
-                  </h3>
-                  <div className="bg-neutral-700 rounded-lg p-4 text-sm font-mono text-neutral-200">
-                    <p className="mb-2">Formato esperado (5 campos separados por comas):</p>
-                    <p className="text-blue-400">lote,parte,expiración,fabricación,serial</p>
-                    <p className="mt-2 text-neutral-400">Ejemplo:</p>
-                    <p className="text-green-400">50822985,k01.005-00m-2,260218,250909,017</p>
+              {/* Otras configuraciones */}
+              <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">
+                  Configuración General
+                </h2>
+                <div className="space-y-6">
+                  {/* Configuración de viscosidad */}
+                  <div className="border-b border-neutral-700 pb-6">
+                    <h3 className="text-sm font-medium text-white mb-2">
+                      Rango de Viscosidad Válido
+                    </h3>
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <label className="block text-xs text-neutral-400">Mínimo</label>
+                        <input
+                          type="number"
+                          defaultValue={150}
+                          className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          disabled
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-neutral-400">Máximo</label>
+                        <input
+                          type="number"
+                          defaultValue={180}
+                          className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-neutral-400">
+                      El rango de viscosidad está configurado en el código. Contacte al administrador para modificarlo.
+                    </p>
                   </div>
-                  <div className="mt-4 text-xs text-neutral-400">
-                    <p><strong className="text-neutral-300">Posición 1:</strong> Número de lote</p>
-                    <p><strong className="text-neutral-300">Posición 2:</strong> Número de parte</p>
-                    <p><strong className="text-neutral-300">Posición 3:</strong> Fecha expiración (YYMMDD)</p>
-                    <p><strong className="text-neutral-300">Posición 4:</strong> Fecha fabricación (YYMMDD)</p>
-                    <p><strong className="text-neutral-300">Posición 5:</strong> Serial del lote</p>
+
+                  {/* Información de conexión */}
+                  <div className="border-b border-neutral-700 pb-6">
+                    <h3 className="text-sm font-medium text-white mb-2">
+                      Base de Datos
+                    </h3>
+                    <p className="text-sm text-neutral-300">
+                      Conexión a MySQL configurada en variables de entorno.
+                    </p>
+                    <p className="text-xs text-neutral-400 mt-1">
+                      Ver archivo .env.local para configuración.
+                    </p>
+                  </div>
+
+                  {/* Formato QR */}
+                  <div>
+                    <h3 className="text-sm font-medium text-white mb-2">
+                      Formato de Código QR
+                    </h3>
+                    <div className="bg-neutral-700 rounded-lg p-4 text-sm font-mono text-neutral-200">
+                      <p className="mb-2">Formato esperado (5 campos separados por comas):</p>
+                      <p className="text-blue-400">lote,parte,expiración,fabricación,serial</p>
+                      <p className="mt-2 text-neutral-400">Ejemplo:</p>
+                      <p className="text-green-400">50822985,k01.005-00m-2,260218,250909,017</p>
+                    </div>
+                    <div className="mt-4 text-xs text-neutral-400">
+                      <p><strong className="text-neutral-300">Posición 1:</strong> Número de lote</p>
+                      <p><strong className="text-neutral-300">Posición 2:</strong> Número de parte</p>
+                      <p><strong className="text-neutral-300">Posición 3:</strong> Fecha expiración (YYMMDD)</p>
+                      <p><strong className="text-neutral-300">Posición 4:</strong> Fecha fabricación (YYMMDD)</p>
+                      <p><strong className="text-neutral-300">Posición 5:</strong> Serial del lote</p>
+                    </div>
                   </div>
                 </div>
               </div>
