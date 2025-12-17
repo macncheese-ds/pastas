@@ -1,0 +1,176 @@
+/**
+ * =====================================================
+ * Main App Component - SMT Paste Tracker
+ * =====================================================
+ */
+
+import { useState } from 'react';
+import Tabs from './components/ui/Tabs';
+import FridgeInTab from './components/tabs/FridgeInTab';
+import ReportsTab from './components/tabs/ReportsTab';
+import PartNumbersConfig from './components/tabs/PartNumbersConfig';
+import {
+  HomeIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
+
+const tabs = [
+  {
+    id: 'fridge-in',
+    label: 'Fridge In',
+    icon: <HomeIcon className="h-5 w-5" />,
+  },
+  {
+    id: 'reports',
+    label: 'Reportes',
+    icon: <ChartBarIcon className="h-5 w-5" />,
+  },
+  {
+    id: 'settings',
+    label: 'Configuración',
+    icon: <Cog6ToothIcon className="h-5 w-5" />,
+  },
+];
+
+export default function App() {
+  const [activeTab, setActiveTab] = useState('fridge-in');
+
+  return (
+    <div className="min-h-screen bg-neutral-900">
+      {/* Header */}
+      <header className="bg-neutral-800 shadow-sm border-b border-neutral-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="h-5 w-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-3">
+                <h1 className="text-xl font-bold text-white">
+                  SMT Paste Tracker
+                </h1>
+                <p className="text-xs text-neutral-400">
+                  Sistema de Trazabilidad de Pastas de Soldadura
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-neutral-400">
+                {new Date().toLocaleDateString('es-MX', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Tabs Navigation */}
+        <div className="bg-neutral-800 rounded-lg shadow-sm mb-6 border border-neutral-700">
+          <div className="px-6">
+            <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div>
+          {activeTab === 'fridge-in' && <FridgeInTab />}
+          {activeTab === 'reports' && <ReportsTab />}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
+                <PartNumbersConfig />
+              </div>
+
+              <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">
+                  Configuración General
+                </h2>
+                <div className="space-y-6">
+                  <div className="border-b border-neutral-700 pb-6">
+                    <h3 className="text-sm font-medium text-white mb-2">
+                      Rango de Viscosidad Válido
+                    </h3>
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <label className="block text-xs text-neutral-400">Mínimo</label>
+                        <input
+                          type="number"
+                          defaultValue={150}
+                          className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          disabled
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-neutral-400">Máximo</label>
+                        <input
+                          type="number"
+                          defaultValue={180}
+                          className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          disabled
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-neutral-400">
+                      El rango de viscosidad está configurado en el código.
+                    </p>
+                  </div>
+
+                  <div className="border-b border-neutral-700 pb-6">
+                    <h3 className="text-sm font-medium text-white mb-2">
+                      Base de Datos
+                    </h3>
+                    <p className="text-sm text-neutral-300">
+                      Conexión a MySQL configurada en variables de entorno del backend.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-white mb-2">
+                      Formato de Código QR
+                    </h3>
+                    <div className="bg-neutral-700 rounded-lg p-4 text-sm font-mono text-neutral-200">
+                      <p className="mb-2">Formato esperado (5 campos separados por comas):</p>
+                      <p className="text-blue-400">lote,parte,expiración,fabricación,serial</p>
+                      <p className="mt-2 text-neutral-400">Ejemplo:</p>
+                      <p className="text-green-400">50822985,k01.005-00m-2,260218,250909,017</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-neutral-800 border-t border-neutral-700 mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <p className="text-center text-sm text-neutral-400">
+            SMT Paste Tracker - Sistema de Trazabilidad v1.0
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}
