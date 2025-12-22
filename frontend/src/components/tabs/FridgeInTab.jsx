@@ -16,10 +16,13 @@ import {
   ManualEntryModal,
   OpenPasteModal,
   PasteDetailsModal,
+  LoginModal,
+  EditDidModal,
 } from '../modals';
 import { parseQRCode, canStartMixing } from '../../lib/qrParser';
 import { STATUS_NEXT_ACTIONS } from '../../types';
 import { getSmtLocation } from '../../config/smtMapping';
+import { login, updatePasteDid } from '../../api';
 import {
   PlusIcon,
   ArrowPathIcon,
@@ -41,12 +44,18 @@ export default function FridgeInTab({ smtLocation }) {
   const [showManualEntryModal, setShowManualEntryModal] = useState(false);
   const [showOpenPasteModal, setShowOpenPasteModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showEditDidModal, setShowEditDidModal] = useState(false);
   
   // Working data
   const [parsedQRData, setParsedQRData] = useState(null);
   const [selectedPaste, setSelectedPaste] = useState(null);
   const [authorizedLines, setAuthorizedLines] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Auth state
+  const [currentUser, setCurrentUser] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
 
   // Fetch pastes
   const fetchPastes = useCallback(async () => {
@@ -84,6 +93,32 @@ export default function FridgeInTab({ smtLocation }) {
       console.error('Error fetching authorized lines:', err);
       setAuthorizedLines([]);
     }
+  };
+
+  // Handle login
+  const handleLogin = async (credentials) => {
+    try {
+      const result = await login(credentials);
+      if (result.success && result.user) {
+        setCurrentUser(result.user);
+        setShowLoginModal(false);
+        
+        // Execute pending action if any
+        if (pendingAction) {
+          await pendingAction(result.user);
+          setPendingAction(null);
+        }
+      }
+    } catch (err) {
+      throw err; // Re-throw to be handled by LoginModal
+    }
+  };
+
+  // Request authentication before an action
+  const requireAuth = (actionFn) => {
+    // For each action, create a wrapper that requests login first
+    setPendingAction(() => actionFn);
+    setShowLoginModal(true);
   };
 
   // Handle QR scan
@@ -200,224 +235,275 @@ export default function FridgeInTab({ smtLocation }) {
   const handleCreatePaste = async (did) => {
     if (!parsedQRData) return;
     
-    setIsProcessing(true);
-    try {
-      const response = await fetch('/api/pastes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          did,
-          lot_number: parsedQRData.lotNumber,
-          lot_serial: parsedQRData.lotSerial,
-          part_number: parsedQRData.partNumber,
-          manufacture_date: parsedQRData.manufactureDate,
-          expiration_date: parsedQRData.expirationDate,
-        }),
-      });
+    // Require authentication
+    requireAuth(async (user) => {
+      setIsProcessing(true);
+      try {
+        const response = await fetch('/api/pastes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            did,
+            lot_number: parsedQRData.lotNumber,
+            lot_serial: parsedQRData.lotSerial,
+            part_number: parsedQRData.partNumber,
+            manufacture_date: parsedQRData.manufactureDate,
+            expiration_date: parsedQRData.expirationDate,
+            user_name: user.nombre,
+          }),
+        });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Error al crear la pasta');
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Error al crear la pasta');
+        }
+
+        setShowNewPasteModal(false);
+        setParsedQRData(null);
+        fetchPastes();
+      } catch (err) {
+        // Close all modals and show error
+        setShowScanActionModal(false);
+        setShowViscosityModal(false);
+        setShowOpenPasteModal(false);
+        setShowCompletedModal(false);
+        setShowWaitTimeModal(false);
+        setShowNewPasteModal(false);
+        setError(err.message);
+      } finally {
+        setIsProcessing(false);
       }
-
-      setShowNewPasteModal(false);
-      setParsedQRData(null);
-      fetchPastes();
-    } catch (err) {
-      // Close all modals and show error
-      setShowScanActionModal(false);
-      setShowViscosityModal(false);
-      setShowOpenPasteModal(false);
-      setShowCompletedModal(false);
-      setShowWaitTimeModal(false);
-      setShowNewPasteModal(false);
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Handle manual entry
   const handleManualEntry = async (data) => {
-    setIsProcessing(true);
-    try {
-      const response = await fetch('/api/pastes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          did: data.did,
-          lot_number: data.lotNumber,
-          lot_serial: data.lotSerial,
-          part_number: data.partNumber,
-          manufacture_date: data.manufactureDate,
-          expiration_date: data.expirationDate,
-        }),
-      });
+    // Require authentication
+    requireAuth(async (user) => {
+      setIsProcessing(true);
+      try {
+        const response = await fetch('/api/pastes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            did: data.did,
+            lot_number: data.lotNumber,
+            lot_serial: data.lotSerial,
+            part_number: data.partNumber,
+            manufacture_date: data.manufactureDate,
+            expiration_date: data.expirationDate,
+            user_name: user.nombre,
+          }),
+        });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Error al crear la pasta');
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Error al crear la pasta');
+        }
+
+        setShowManualEntryModal(false);
+        fetchPastes();
+      } catch (err) {
+        // Close all modals and show error
+        setShowScanActionModal(false);
+        setShowViscosityModal(false);
+        setShowOpenPasteModal(false);
+        setShowCompletedModal(false);
+        setShowWaitTimeModal(false);
+        setShowNewPasteModal(false);
+        setShowManualEntryModal(false);
+        setError(err.message);
+      } finally {
+        setIsProcessing(false);
       }
-
-      setShowManualEntryModal(false);
-      fetchPastes();
-    } catch (err) {
-      // Close all modals and show error
-      setShowScanActionModal(false);
-      setShowViscosityModal(false);
-      setShowOpenPasteModal(false);
-      setShowCompletedModal(false);
-      setShowWaitTimeModal(false);
-      setShowNewPasteModal(false);
-      setShowManualEntryModal(false);
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Scan action (advance status)
   const handleScanAction = async () => {
     if (!selectedPaste) return;
     
-    setIsProcessing(true);
-    try {
-      // Derive the expected scan_type from the current status
-      const statusKey = selectedPaste.status || 'new';
-      const nextAction = STATUS_NEXT_ACTIONS[statusKey];
-      const scanType = nextAction?.actionType || null;
+    // Require authentication
+    requireAuth(async (user) => {
+      setIsProcessing(true);
+      try {
+        // Derive the expected scan_type from the current status
+        const statusKey = selectedPaste.status || 'new';
+        const nextAction = STATUS_NEXT_ACTIONS[statusKey];
+        const scanType = nextAction?.actionType || null;
 
-      if (!scanType) {
-        throw new Error('Tipo de escaneo no determinado para este estado');
+        if (!scanType) {
+          throw new Error('Tipo de escaneo no determinado para este estado');
+        }
+
+        const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            scan_type: scanType,
+            user_name: user.nombre,
+          }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Error al procesar la acción');
+        }
+
+        setShowScanActionModal(false);
+        setSelectedPaste(null);
+        fetchPastes();
+      } catch (err) {
+        // Close all modals and show error
+        setShowScanActionModal(false);
+        setShowViscosityModal(false);
+        setShowOpenPasteModal(false);
+        setShowCompletedModal(false);
+        setShowWaitTimeModal(false);
+        setShowNewPasteModal(false);
+        setError(err.message);
+      } finally {
+        setIsProcessing(false);
       }
-
-      const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scan_type: scanType }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Error al procesar la acción');
-      }
-
-      setShowScanActionModal(false);
-      setSelectedPaste(null);
-      fetchPastes();
-    } catch (err) {
-      // Close all modals and show error
-      setShowScanActionModal(false);
-      setShowViscosityModal(false);
-      setShowOpenPasteModal(false);
-      setShowCompletedModal(false);
-      setShowWaitTimeModal(false);
-      setShowNewPasteModal(false);
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Submit viscosity
   const handleViscositySubmit = async (value) => {
     if (!selectedPaste) return;
     
-    setIsProcessing(true);
-    try {
-      const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scan_type: 'viscosity_check', viscosity_value: value }),
-      });
+    // Require authentication
+    requireAuth(async (user) => {
+      setIsProcessing(true);
+      try {
+        const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            scan_type: 'viscosity_check', 
+            viscosity_value: value,
+            user_name: user.nombre,
+          }),
+        });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        const serverMsg = errData.error || errData.message || (errData.data && errData.data.message) || JSON.stringify(errData);
-        throw new Error(serverMsg || 'Error al registrar la viscosidad');
+        if (!response.ok) {
+          const errData = await response.json();
+          const serverMsg = errData.error || errData.message || (errData.data && errData.data.message) || JSON.stringify(errData);
+          throw new Error(serverMsg || 'Error al registrar la viscosidad');
+        }
+
+        setShowViscosityModal(false);
+        setSelectedPaste(null);
+        fetchPastes();
+      } catch (err) {
+        // Close all modals and show error
+        setShowScanActionModal(false);
+        setShowViscosityModal(false);
+        setShowOpenPasteModal(false);
+        setShowCompletedModal(false);
+        setShowWaitTimeModal(false);
+        setShowNewPasteModal(false);
+        setError(err.message);
+      } finally {
+        setIsProcessing(false);
       }
-
-      setShowViscosityModal(false);
-      setSelectedPaste(null);
-      fetchPastes();
-    } catch (err) {
-      // Close all modals and show error
-      setShowScanActionModal(false);
-      setShowViscosityModal(false);
-      setShowOpenPasteModal(false);
-      setShowCompletedModal(false);
-      setShowWaitTimeModal(false);
-      setShowNewPasteModal(false);
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Open paste
   const handleOpenPaste = async (selectedSmtLocation) => {
     if (!selectedPaste) return;
     
-    setIsProcessing(true);
-    try {
-      const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scan_type: 'opened', smt_location: selectedSmtLocation }),
-      });
+    // Require authentication
+    requireAuth(async (user) => {
+      setIsProcessing(true);
+      try {
+        const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            scan_type: 'opened', 
+            smt_location: selectedSmtLocation,
+            user_name: user.nombre,
+          }),
+        });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        const serverMsg = errData.error || errData.message || (errData.data && errData.data.message) || JSON.stringify(errData);
-        throw new Error(serverMsg || 'Error al abrir la pasta');
+        if (!response.ok) {
+          const errData = await response.json();
+          const serverMsg = errData.error || errData.message || (errData.data && errData.data.message) || JSON.stringify(errData);
+          throw new Error(serverMsg || 'Error al abrir la pasta');
+        }
+
+        setShowOpenPasteModal(false);
+        setSelectedPaste(null);
+        fetchPastes();
+      } catch (err) {
+        // Close all modals and show error
+        setShowScanActionModal(false);
+        setShowViscosityModal(false);
+        setShowOpenPasteModal(false);
+        setShowCompletedModal(false);
+        setShowWaitTimeModal(false);
+        setShowNewPasteModal(false);
+        setError(err.message);
+      } finally {
+        setIsProcessing(false);
       }
-
-      setShowOpenPasteModal(false);
-      setSelectedPaste(null);
-      fetchPastes();
-    } catch (err) {
-      // Close all modals and show error
-      setShowScanActionModal(false);
-      setShowViscosityModal(false);
-      setShowOpenPasteModal(false);
-      setShowCompletedModal(false);
-      setShowWaitTimeModal(false);
-      setShowNewPasteModal(false);
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
+    });
   };
 
   // Complete/remove paste
   const handleCompletePaste = async () => {
     if (!selectedPaste) return;
     
-    setIsProcessing(true);
-    try {
-      const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scan_type: 'removed' }),
-      });
+    // Require authentication
+    requireAuth(async (user) => {
+      setIsProcessing(true);
+      try {
+        const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            scan_type: 'removed',
+            user_name: user.nombre,
+          }),
+        });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Error al retirar la pasta');
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Error al retirar la pasta');
+        }
+
+        setShowCompletedModal(false);
+        setSelectedPaste(null);
+        fetchPastes();
+      } catch (err) {
+        // Close all modals and show error
+        setShowScanActionModal(false);
+        setShowViscosityModal(false);
+        setShowOpenPasteModal(false);
+        setShowCompletedModal(false);
+        setShowWaitTimeModal(false);
+        setShowNewPasteModal(false);
+        setError(err.message);
+      } finally {
+        setIsProcessing(false);
       }
+    });
+  };
 
-      setShowCompletedModal(false);
-      setSelectedPaste(null);
-      fetchPastes();
+  // Handle DID update
+  const handleUpdateDid = async (pasteId, newDid) => {
+    try {
+      setIsProcessing(true);
+      const result = await updatePasteDid(pasteId, newDid);
+      if (result.success) {
+        await fetchPastes();
+        setShowEditDidModal(false);
+        setSelectedPaste(null);
+      }
     } catch (err) {
-      // Close all modals and show error
-      setShowScanActionModal(false);
-      setShowViscosityModal(false);
-      setShowOpenPasteModal(false);
-      setShowCompletedModal(false);
-      setShowWaitTimeModal(false);
-      setShowNewPasteModal(false);
-      setError(err.message);
+      throw err;
     } finally {
       setIsProcessing(false);
     }
@@ -430,6 +516,9 @@ export default function FridgeInTab({ smtLocation }) {
     switch (action) {
       case 'view':
         setShowDetailsModal(true);
+        break;
+      case 'editDid':
+        setShowEditDidModal(true);
         break;
       case 'scan':
         if (paste.status === 'out_fridge' && !canStartMixing(paste.fridge_out_datetime)) {
@@ -610,6 +699,26 @@ export default function FridgeInTab({ smtLocation }) {
           setSelectedPaste(null);
         }}
         paste={selectedPaste}
+      />
+
+      <EditDidModal
+        isOpen={showEditDidModal}
+        onClose={() => {
+          setShowEditDidModal(false);
+          setSelectedPaste(null);
+        }}
+        onSave={handleUpdateDid}
+        paste={selectedPaste}
+      />
+
+      <LoginModal
+        visible={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          setPendingAction(null);
+        }}
+        onConfirm={handleLogin}
+        busy={isProcessing}
       />
     </div>
   );

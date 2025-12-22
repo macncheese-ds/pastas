@@ -20,9 +20,18 @@ export default function QRScannerInput({
 
   const maintainFocus = useCallback(() => {
     if (inputRef.current && !disabled && document.activeElement !== inputRef.current) {
+      // Don't steal focus if user is interacting with other inputs or interactive elements
+      const activeElement = document.activeElement;
       const hasModalOpen = document.querySelector('[role="dialog"]') || 
                           document.querySelector('.fixed.inset-0.z-50');
-      if (!hasModalOpen) {
+      const isUserTyping = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        activeElement.isContentEditable
+      );
+      
+      if (!hasModalOpen && !isUserTyping) {
         inputRef.current.focus();
       }
     }

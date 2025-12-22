@@ -12,3 +12,5 @@ export { default as WaitTimeModal } from './WaitTimeModal';
 export { default as ManualEntryModal } from './ManualEntryModal';
 export { default as OpenPasteModal } from './OpenPasteModal';
 export { default as PasteDetailsModal } from './PasteDetailsModal';
+export { default as LoginModal } from './LoginModal';
+export { default as EditDidModal } from './EditDidModal';

@@ -109,11 +109,17 @@ router.get('/export/excel', async (req, res) => {
         status,
         viscosity_value,
         fridge_in_datetime,
+        fridge_in_user,
         fridge_out_datetime,
+        fridge_out_user,
         mixing_start_datetime,
+        mixing_start_user,
         viscosity_datetime,
+        viscosity_user,
         opened_datetime,
+        opened_user,
         removed_datetime,
+        removed_user,
         created_at
       FROM solder_paste 
       ORDER BY expiration_date ASC, created_at ASC`
@@ -132,11 +138,17 @@ router.get('/export/excel', async (req, res) => {
       'ESTADO',
       'VISCOSIDAD',
       'ENTRADA REFRI',
+      'USUARIO ENTRADA',
       'SALIDA REFRI',
+      'USUARIO SALIDA',
       'INICIO MEZCLADO',
+      'USUARIO MEZCLADO',
       'VISCOSIDAD REGISTRADA',
+      'USUARIO VISCOSIDAD',
       'APERTURA',
+      'USUARIO APERTURA',
       'RETIRADO',
+      'USUARIO RETIRO',
       'FECHA CREACIÓN'
     ];
 
@@ -166,11 +178,17 @@ router.get('/export/excel', async (req, res) => {
       paste.status,
       paste.viscosity_value || '',
       formatDate(paste.fridge_in_datetime),
+      paste.fridge_in_user || '',
       formatDate(paste.fridge_out_datetime),
+      paste.fridge_out_user || '',
       formatDate(paste.mixing_start_datetime),
+      paste.mixing_start_user || '',
       formatDate(paste.viscosity_datetime),
+      paste.viscosity_user || '',
       formatDate(paste.opened_datetime),
+      paste.opened_user || '',
       formatDate(paste.removed_datetime),
+      paste.removed_user || '',
       formatDate(paste.created_at)
     ]);
 
@@ -204,17 +222,25 @@ router.get('/export/excel', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const { did, lot_number, part_number, lot_serial, manufacture_date, expiration_date, smt_location } = req.body;
+    const { did, lot_number, part_number, lot_serial, manufacture_date, expiration_date, smt_location, user_name } = req.body;
 
-    // Convert to uppercase
-    const upperDid = did?.trim().toUpperCase();
+    // Validar que se proporcione el nombre de usuario
+    if (!user_name || !user_name.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe iniciar sesión para registrar una pasta',
+      });
+    }
+
+    // Trim fields
+    const trimmedDid = did?.trim();
     const upperLotNumber = lot_number?.trim().toUpperCase();
     const upperPartNumber = part_number?.trim().toUpperCase();
     const upperLotSerial = lot_serial?.trim().toUpperCase();
     const upperSmtLocation = smt_location?.trim().toUpperCase();
 
     // Validate required fields
-    if (!upperDid || !upperLotNumber || !upperPartNumber || !upperLotSerial || !manufacture_date || !expiration_date) {
+    if (!trimmedDid || !upperLotNumber || !upperPartNumber || !upperLotSerial || !manufacture_date || !expiration_date) {
       return res.status(400).json({
         success: false,
         error: 'Todos los campos son obligatorios',
@@ -305,9 +331,9 @@ router.post('/', async (req, res) => {
       `INSERT INTO solder_paste (
         did, lot_number, part_number, lot_serial,
         smt_location, manufacture_date, expiration_date,
-        fridge_in_datetime, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), 'in_fridge')`,
-      [upperDid, upperLotNumber, upperPartNumber, upperLotSerial, upperSmtLocation || null, manufacture_date, expiration_date]
+        fridge_in_datetime, fridge_in_user, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'in_fridge')`,
+      [trimmedDid, upperLotNumber, upperPartNumber, upperLotSerial, upperSmtLocation || null, manufacture_date, expiration_date, user_name.trim()]
     );
 
     // Get created record
@@ -318,8 +344,8 @@ router.post('/', async (req, res) => {
 
     // Log the scan
     await query(
-      `INSERT INTO scan_log (solder_paste_id, scan_type, notes) VALUES (?, 'fridge_in', ?)`,
-      [result.insertId, `Registro inicial - DID: ${did.trim()} - Entrada a refrigerador`]
+      `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, 'fridge_in', ?, ?)`,
+      [result.insertId, user_name.trim(), `Registro inicial - DID: ${did.trim()} - Entrada a refrigerador`]
     );
 
     res.status(201).json({
@@ -409,16 +435,18 @@ router.delete('/:id', async (req, res) => {
 /**
  * Check FEFO: Verify if this paste with the same expiration date should be used
  * Returns error if an earlier-registered paste with same expiration exists
+ * Only checks pastes that are STILL IN FRIDGE - pastes already out don't block
  */
 async function checkFEFO(pasteId, expirationDate, partNumber) {
   try {
     // Find other pastes with same expiration date and part number
+    // ONLY CHECK PASTES IN FRIDGE - once out, they don't block other pastes
     const olderPastes = await query(
-      `SELECT id, created_at FROM solder_paste 
+      `SELECT id, created_at, did, lot_number, lot_serial FROM solder_paste 
        WHERE expiration_date = ? 
        AND part_number = ? 
        AND id != ?
-       AND status IN ('in_fridge', 'out_fridge', 'mixing', 'viscosity_ok')
+       AND status = 'in_fridge'
        AND created_at < (SELECT created_at FROM solder_paste WHERE id = ?)
        ORDER BY created_at ASC
        LIMIT 1`,
@@ -428,7 +456,7 @@ async function checkFEFO(pasteId, expirationDate, partNumber) {
     if (olderPastes.length > 0) {
       return {
         violation: true,
-        message: `Existe una pasta más antigua (${new Date(olderPastes[0].created_at).toLocaleString('es-MX')}) con la misma fecha de vencimiento que debe ser usada primero (FEFO).`
+        message: `Existe una pasta más antigua (${new Date(olderPastes[0].created_at).toLocaleString('es-MX')}) con la misma fecha de vencimiento que debe ser usada primero (FIFO).\n\nDID: ${olderPastes[0].did}\nLote: ${olderPastes[0].lot_number}-${olderPastes[0].lot_serial}`
       };
     }
 
@@ -454,7 +482,15 @@ router.post('/:id/scan', async (req, res) => {
       });
     }
 
-    const { scan_type, viscosity_value, smt_location } = req.body;
+    const { scan_type, viscosity_value, smt_location, user_name } = req.body;
+
+    // Validar que se proporcione el nombre de usuario
+    if (!user_name || !user_name.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe iniciar sesión para realizar esta acción',
+      });
+    }
 
     // Get current paste
     const results = await query(
@@ -493,9 +529,10 @@ router.post('/:id/scan', async (req, res) => {
           });
         }
 
-        // FEFO validation - check for earlier expiring pastes
+        // FEFO validation - check for earlier expiring pastes ONLY IN FRIDGE
+        // If pastes are already out (out_fridge or later states), they don't block
         const earlierExpiringPastes = await query(
-          `SELECT id, lot_number, lot_serial, expiration_date, part_number
+          `SELECT id, lot_number, lot_serial, expiration_date, part_number, did
            FROM solder_paste 
            WHERE status = 'in_fridge' AND id != ? AND expiration_date < ? AND part_number = ?
            ORDER BY expiration_date ASC LIMIT 5`,
@@ -506,20 +543,20 @@ router.post('/:id/scan', async (req, res) => {
           const pastesList = earlierExpiringPastes.map(p => {
             const expDate = new Date(p.expiration_date);
             const formattedDate = expDate.toLocaleDateString('es-MX');
-            return `• Lote ${p.lot_number}-${p.lot_serial} (Vence: ${formattedDate})`;
-          }).join('\n');
+            return `• DID: ${p.did}\n  Lote: ${p.lot_number}-${p.lot_serial}\n  Vence: ${formattedDate}`;
+          }).join('\n\n');
 
           const currentExpDate = new Date(paste.expiration_date);
           const currentFormattedDate = currentExpDate.toLocaleDateString('es-MX');
 
           return res.status(400).json({
             success: false,
-            error: `⚠️ FEFO: Existen ${earlierExpiringPastes.length} pasta(s) con fecha de vencimiento anterior que deben usarse primero.\n\nPasta actual: Lote ${paste.lot_number}-${paste.lot_serial} (Vence: ${currentFormattedDate})\n\nDeben usarse primero:\n${pastesList}`,
+            error: `⚠️ FEFO: Existen ${earlierExpiringPastes.length} pasta(s) con fecha de vencimiento anterior que deben usarse primero.\n\nPasta actual:\n• DID: ${paste.did}\n  Lote: ${paste.lot_number}-${paste.lot_serial}\n  Vence: ${currentFormattedDate}\n\nDeben usarse primero:\n${pastesList}`,
             data: { fefoViolation: true, earlierExpiringPastes },
           });
         }
 
-        // FIFO validation - check for older pastes with same expiration date
+        // FIFO validation - check for older pastes with same expiration date ONLY IN FRIDGE
         const fefoCheck = await checkFEFO(pasteId, paste.expiration_date, paste.part_number);
         if (fefoCheck.violation) {
           return res.status(400).json({
@@ -529,8 +566,8 @@ router.post('/:id/scan', async (req, res) => {
           });
         }
 
-        updateQuery = `UPDATE solder_paste SET fridge_out_datetime = NOW(), status = 'out_fridge' WHERE id = ?`;
-        updateParams = [pasteId];
+        updateQuery = `UPDATE solder_paste SET fridge_out_datetime = NOW(), fridge_out_user = ?, status = 'out_fridge' WHERE id = ?`;
+        updateParams = [user_name.trim(), pasteId];
         newStatus = 'out_fridge';
         logNotes = 'Salida del refrigerador';
         break;
@@ -573,8 +610,8 @@ router.post('/:id/scan', async (req, res) => {
           }
         }
 
-        updateQuery = `UPDATE solder_paste SET mixing_start_datetime = NOW(), status = 'mixing' WHERE id = ?`;
-        updateParams = [pasteId];
+        updateQuery = `UPDATE solder_paste SET mixing_start_datetime = NOW(), mixing_start_user = ?, status = 'mixing' WHERE id = ?`;
+        updateParams = [user_name.trim(), pasteId];
         newStatus = 'mixing';
         logNotes = 'Inicio de mezclado';
         break;
@@ -597,13 +634,13 @@ router.post('/:id/scan', async (req, res) => {
         if (!isValidViscosity(viscosity_value)) {
           // Reject - out of range
           await query(
-            `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), status = 'rejected' WHERE id = ?`,
-            [viscosity_value, pasteId]
+            `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), viscosity_user = ?, status = 'rejected' WHERE id = ?`,
+            [viscosity_value, user_name.trim(), pasteId]
           );
 
           await query(
-            `INSERT INTO scan_log (solder_paste_id, scan_type, notes) VALUES (?, ?, ?)`,
-            [pasteId, 'viscosity_check', `Viscosidad rechazada: ${viscosity_value} (fuera de rango 150-180). Volver a mezclar.`]
+            `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, ?, ?, ?)`,
+            [pasteId, 'viscosity_check', user_name.trim(), `Viscosidad rechazada: ${viscosity_value} (fuera de rango 170-230). Volver a mezclar.`]
           );
 
           const updatedPaste = await query(
@@ -614,12 +651,12 @@ router.post('/:id/scan', async (req, res) => {
           return res.json({
             success: false,
             data: updatedPaste[0],
-            error: `Viscosidad ${viscosity_value} fuera de rango. Debe estar entre 150-180. Por favor, vuelva a mezclar.`,
+            error: `Viscosidad ${viscosity_value} fuera de rango. Debe estar entre 170-230. Por favor, vuelva a mezclar.`,
           });
         }
 
-        updateQuery = `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), status = 'viscosity_ok' WHERE id = ?`;
-        updateParams = [viscosity_value, pasteId];
+        updateQuery = `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), viscosity_user = ?, status = 'viscosity_ok' WHERE id = ?`;
+        updateParams = [viscosity_value, user_name.trim(), pasteId];
         newStatus = 'viscosity_ok';
         logNotes = `Viscosidad aprobada: ${viscosity_value}`;
         break;
@@ -639,8 +676,8 @@ router.post('/:id/scan', async (req, res) => {
           });
         }
 
-        updateQuery = `UPDATE solder_paste SET opened_datetime = NOW(), smt_location = ?, status = 'opened' WHERE id = ?`;
-        updateParams = [smt_location, pasteId];
+        updateQuery = `UPDATE solder_paste SET opened_datetime = NOW(), smt_location = ?, opened_user = ?, status = 'opened' WHERE id = ?`;
+        updateParams = [smt_location, user_name.trim(), pasteId];
         newStatus = 'opened';
         logNotes = `Contenedor abierto - Línea: ${smt_location}`;
         break;
@@ -653,8 +690,8 @@ router.post('/:id/scan', async (req, res) => {
           });
         }
 
-        updateQuery = `UPDATE solder_paste SET removed_datetime = NOW(), status = 'removed' WHERE id = ?`;
-        updateParams = [pasteId];
+        updateQuery = `UPDATE solder_paste SET removed_datetime = NOW(), removed_user = ?, status = 'removed' WHERE id = ?`;
+        updateParams = [user_name.trim(), pasteId];
         newStatus = 'removed';
         logNotes = 'Retiro final completado';
         break;
@@ -671,8 +708,8 @@ router.post('/:id/scan', async (req, res) => {
 
     // Log scan
     await query(
-      `INSERT INTO scan_log (solder_paste_id, scan_type, notes) VALUES (?, ?, ?)`,
-      [pasteId, scan_type, logNotes]
+      `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, ?, ?, ?)`,
+      [pasteId, scan_type, user_name.trim(), logNotes]
     );
 
     // Get updated record
@@ -724,6 +761,87 @@ router.get('/:id/scan', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Error al obtener el historial',
+    });
+  }
+});
+
+/**
+ * PUT /api/pastes/:id/did
+ * Update DID (Document Identification) only when paste is in fridge
+ */
+router.put('/:id/did', async (req, res) => {
+  try {
+    const pasteId = parseInt(req.params.id, 10);
+
+    if (isNaN(pasteId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID de pasta inválido',
+      });
+    }
+
+    const { did } = req.body;
+
+    // Validate DID
+    const trimmedDid = did?.trim();
+    if (!trimmedDid) {
+      return res.status(400).json({
+        success: false,
+        error: 'El DID es obligatorio',
+      });
+    }
+
+    // Get current paste
+    const results = await query(
+      `SELECT * FROM solder_paste WHERE id = ?`,
+      [pasteId]
+    );
+
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pasta no encontrada',
+      });
+    }
+
+    const paste = results[0];
+
+    // Only allow editing DID when status is 'in_fridge'
+    if (paste.status !== 'in_fridge') {
+      return res.status(400).json({
+        success: false,
+        error: 'Solo se puede editar el DID cuando la pasta está en el refrigerador',
+      });
+    }
+
+    // Update DID
+    await query(
+      `UPDATE solder_paste SET did = ? WHERE id = ?`,
+      [trimmedDid, pasteId]
+    );
+
+    // Get updated record
+    const updatedPaste = await query(
+      `SELECT * FROM solder_paste WHERE id = ?`,
+      [pasteId]
+    );
+
+    // Log the change
+    await query(
+      `INSERT INTO scan_log (solder_paste_id, scan_type, notes) VALUES (?, ?, ?)`,
+      [pasteId, 'did_update', `DID actualizado de "${paste.did}" a "${trimmedDid}"`]
+    );
+
+    res.json({
+      success: true,
+      data: updatedPaste[0],
+      message: 'DID actualizado exitosamente',
+    });
+  } catch (error) {
+    console.error('Error updating DID:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Error al actualizar el DID',
     });
   }
 });

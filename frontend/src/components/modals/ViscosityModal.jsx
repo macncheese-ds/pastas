@@ -45,10 +45,10 @@ export default function ViscosityModal({
 
     const numValue = parseFloat(value);
     if (value && !isNaN(numValue)) {
-      if (numValue < 150) {
-        setError('Valor muy bajo. Mínimo permitido: 150');
-      } else if (numValue > 180) {
-        setError('Valor muy alto. Máximo permitido: 180');
+      if (numValue < 170) {
+        setError('Valor muy bajo. Mínimo permitido: 170');
+      } else if (numValue > 230) {
+        setError('Valor muy alto. Máximo permitido: 230');
       }
     }
   };
@@ -62,7 +62,7 @@ export default function ViscosityModal({
     }
 
     if (!isValidViscosity(numValue)) {
-      setError(`Valor ${numValue} fuera de rango. Debe estar entre 150-180.`);
+      setError(`Valor ${numValue} fuera de rango. Debe estar entre 170-230.`);
       return;
     }
 
@@ -119,7 +119,7 @@ export default function ViscosityModal({
               <BeakerIcon className="h-8 w-8 text-blue-400" />
             </div>
             <p className="text-sm text-neutral-400">Rango válido de viscosidad</p>
-            <p className="text-2xl font-bold text-white">150 - 180</p>
+            <p className="text-2xl font-bold text-white">170 - 230</p>
           </div>
         </div>
 

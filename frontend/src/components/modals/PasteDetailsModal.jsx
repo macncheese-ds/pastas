@@ -12,6 +12,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 
 export default function PasteDetailsModal({
@@ -25,24 +26,28 @@ export default function PasteDetailsModal({
     {
       label: 'Entrada refrigerador',
       datetime: paste.fridge_in_datetime,
+      user: paste.fridge_in_user,
       icon: CheckCircleIcon,
       color: 'text-green-400',
     },
     {
       label: 'Salida refrigerador',
       datetime: paste.fridge_out_datetime,
+      user: paste.fridge_out_user,
       icon: CheckCircleIcon,
       color: 'text-blue-400',
     },
     {
       label: 'Inicio mezclado',
       datetime: paste.mixing_start_datetime,
+      user: paste.mixing_start_user,
       icon: ClockIcon,
       color: 'text-yellow-400',
     },
     {
       label: 'Viscosidad registrada',
       datetime: paste.viscosity_datetime,
+      user: paste.viscosity_user,
       icon: CheckCircleIcon,
       color: 'text-green-400',
       extra: paste.viscosity_value ? `Valor: ${paste.viscosity_value}` : null,
@@ -50,6 +55,7 @@ export default function PasteDetailsModal({
     {
       label: 'Apertura',
       datetime: paste.opened_datetime,
+      user: paste.opened_user,
       icon: CheckCircleIcon,
       color: 'text-purple-400',
       extra: paste.smt_location ? `Línea: ${paste.smt_location}` : null,
@@ -57,6 +63,7 @@ export default function PasteDetailsModal({
     {
       label: 'Retirado',
       datetime: paste.removed_datetime,
+      user: paste.removed_user,
       icon: XCircleIcon,
       color: 'text-gray-400',
     },
@@ -119,15 +126,21 @@ export default function PasteDetailsModal({
         {timeline.length > 0 && (
           <div className="rounded-lg border border-neutral-700 p-4">
             <h4 className="text-sm font-medium text-neutral-300 mb-4">Historial</h4>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {timeline.map((item, index) => {
                 const Icon = item.icon;
                 return (
                   <div key={index} className="flex items-start">
-                    <Icon className={`h-5 w-5 ${item.color} mr-3 mt-0.5`} />
-                    <div className="flex-1">
+                    <Icon className={`h-5 w-5 ${item.color} mr-3 mt-0.5 flex-shrink-0`} />
+                    <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-white">{item.label}</div>
-                      <div className="text-xs text-neutral-400">{formatDateTime(item.datetime)}</div>
+                      <div className="text-xs text-neutral-400 mt-0.5">{formatDateTime(item.datetime)}</div>
+                      {item.user && (
+                        <div className="flex items-center mt-1.5 text-xs text-blue-400">
+                          <UserIcon className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                          <span className="font-medium">{item.user}</span>
+                        </div>
+                      )}
                       {item.extra && (
                         <div className="text-xs text-neutral-500 mt-1">{item.extra}</div>
                       )}

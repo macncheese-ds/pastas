@@ -116,10 +116,10 @@ function calculateDaysRemaining(expirationDate) {
 }
 
 /**
- * Validate viscosity value (150-180)
+ * Validate viscosity value (170-230)
  */
 function isValidViscosity(value) {
-  return value >= 150 && value <= 180;
+  return value >= 170 && value <= 230;
 }
 
 /**

@@ -40,7 +40,7 @@ export default function App() {
     <div className="min-h-screen bg-neutral-900">
       {/* Header */}
       <header className="bg-neutral-800 shadow-sm border-b border-neutral-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -84,7 +84,7 @@ export default function App() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="px-4 sm:px-6 lg:px-8 py-8">
         {/* Tabs Navigation */}
         <div className="bg-neutral-800 rounded-lg shadow-sm mb-6 border border-neutral-700">
           <div className="px-6">
@@ -165,7 +165,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-neutral-800 border-t border-neutral-700 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-neutral-400">
             SMT Paste Tracker - Sistema de Trazabilidad v1.0
           </p>

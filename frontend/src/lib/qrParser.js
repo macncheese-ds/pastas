@@ -161,7 +161,7 @@ export function getShelfLifeStatus(daysRemaining) {
  * Validate viscosity value
  */
 export function isValidViscosity(value) {
-  return value >= 150 && value <= 180;
+  return value >= 170 && value <= 230;
 }
 
 /**

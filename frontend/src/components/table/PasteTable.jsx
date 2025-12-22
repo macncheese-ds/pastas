@@ -7,8 +7,9 @@
 import { useState, useMemo } from 'react';
 import StatusBadge from '../ui/StatusBadge';
 import ShelfLifeIndicator from '../ui/ShelfLifeIndicator';
+import WaitTimeCounter from '../ui/WaitTimeCounter';
 import { formatDateTime, formatDate } from '../../lib/qrParser';
-import { EyeIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, XMarkIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 export default function PasteTable({
   pastes,
@@ -30,9 +31,9 @@ export default function PasteTable({
     return unique.sort();
   }, [pastes]);
 
-  // Filter pastes based on search and filters
+  // Filter pastes based on search and filters, then sort by FEFO/FIFO
   const filteredPastes = useMemo(() => {
-    return pastes.filter(paste => {
+    const filtered = pastes.filter(paste => {
       // Search term filter (DID, lot_number, lot_serial)
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -47,6 +48,19 @@ export default function PasteTable({
       // SMT location filter
       if (filterSmtLocation && paste.smt_location !== filterSmtLocation) return false;
       return true;
+    });
+
+    // Sort by FEFO/FIFO: earliest expiration first, then earliest creation
+    return filtered.sort((a, b) => {
+      // First sort by expiration date (FEFO)
+      const expA = new Date(a.expiration_date).getTime();
+      const expB = new Date(b.expiration_date).getTime();
+      if (expA !== expB) return expA - expB;
+      
+      // If same expiration, sort by creation date (FIFO)
+      const createdA = new Date(a.fridge_in_datetime || a.created_at).getTime();
+      const createdB = new Date(b.fridge_in_datetime || b.created_at).getTime();
+      return createdA - createdB;
     });
   }, [pastes, searchTerm, filterPartNumber, filterSmtLocation]);
 
@@ -211,6 +225,7 @@ export default function PasteTable({
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Vencimiento</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Línea SMT</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Estado</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Tiempo Espera</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Vida Útil</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Entrada Fridge</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Viscosidad</th>
@@ -248,6 +263,13 @@ export default function PasteTable({
                   <StatusBadge status={paste.status} size="sm" />
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
+                  {paste.status === 'out_fridge' && paste.fridge_out_datetime ? (
+                    <WaitTimeCounter fridgeOutDatetime={paste.fridge_out_datetime} compact />
+                  ) : (
+                    <span className="text-sm text-neutral-500">-</span>
+                  )}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
                   <ShelfLifeIndicator expirationDate={paste.expiration_date} compact />
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
@@ -275,6 +297,15 @@ export default function PasteTable({
                     >
                       <EyeIcon className="h-5 w-5" />
                     </button>
+                    {paste.status === 'in_fridge' && (
+                      <button
+                        onClick={() => onAction(paste, 'editDid')}
+                        className="p-1 text-neutral-400 hover:text-yellow-400 transition-colors"
+                        title="Editar DID"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                      </button>
+                    )}
                     {onAction && paste.status !== 'removed' && (
                       <button
                         onClick={() => onAction(paste, 'scan')}

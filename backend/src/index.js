@@ -11,6 +11,7 @@ const cors = require('cors');
 // Import routes
 const pastesRoutes = require('./routes/pastes');
 const partLinesRoutes = require('./routes/part-lines');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -22,6 +23,7 @@ app.use(express.json());
 // Routes
 app.use('/api/pastes', pastesRoutes);
 app.use('/api/part-lines', partLinesRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
