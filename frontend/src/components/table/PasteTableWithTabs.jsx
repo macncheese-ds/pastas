@@ -11,8 +11,8 @@ import PasteTable from './PasteTable';
 const TABS = [
   { id: 'all', label: 'Todos', statuses: null, color: 'blue' },
   { id: 'in_fridge', label: 'En Refrigerador', statuses: ['in_fridge'], color: 'cyan' },
-  { id: 'out_fridge', label: 'Fuera Refri', statuses: ['out_fridge'], color: 'yellow' },
-  { id: 'mixing', label: 'Mezclando', statuses: ['mixing', 'rejected'], color: 'orange' },
+  { id: 'out_fridge', label: 'Ambientacion', statuses: ['out_fridge'], color: 'yellow' },
+  { id: 'mixing', label: 'Mix', statuses: ['mixing', 'rejected'], color: 'orange' },
   { id: 'viscosity_ok', label: 'Viscosidad OK', statuses: ['viscosity_ok'], color: 'green' },
   { id: 'opened', label: 'Abierto', statuses: ['opened'], color: 'purple' },
   { id: 'removed', label: 'Retirado', statuses: ['removed'], color: 'gray' },

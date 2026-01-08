@@ -232,7 +232,7 @@ export default function FridgeInTab({ smtLocation }) {
   };
 
   // Create new paste
-  const handleCreatePaste = async (did) => {
+  const handleCreatePaste = async (did, manufactureDate = null) => {
     if (!parsedQRData) return;
     
     // Require authentication
@@ -247,7 +247,7 @@ export default function FridgeInTab({ smtLocation }) {
             lot_number: parsedQRData.lotNumber,
             lot_serial: parsedQRData.lotSerial,
             part_number: parsedQRData.partNumber,
-            manufacture_date: parsedQRData.manufactureDate,
+            manufacture_date: manufactureDate || parsedQRData.manufactureDate,
             expiration_date: parsedQRData.expirationDate,
             user_name: user.nombre,
           }),

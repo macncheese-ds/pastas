@@ -7,8 +7,8 @@
 // Status labels
 export const STATUS_LABELS = {
   in_fridge: 'En Refrigerador',
-  out_fridge: 'Fuera de Refrigerador',
-  mixing: 'Mezclando',
+  out_fridge: 'Ambientacion',
+  mixing: 'Mix',
   viscosity_ok: 'Viscosidad OK',
   opened: 'Abierto',
   removed: 'Retirado',

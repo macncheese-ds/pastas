@@ -240,10 +240,18 @@ router.post('/', async (req, res) => {
     const upperSmtLocation = smt_location?.trim().toUpperCase();
 
     // Validate required fields
-    if (!trimmedDid || !upperLotNumber || !upperPartNumber || !upperLotSerial || !manufacture_date || !expiration_date) {
+    if (!trimmedDid || !upperLotNumber || !upperPartNumber || !upperLotSerial || !expiration_date) {
       return res.status(400).json({
         success: false,
         error: 'Todos los campos son obligatorios',
+      });
+    }
+
+    // Validate manufacture_date is provided
+    if (!manufacture_date) {
+      return res.status(400).json({
+        success: false,
+        error: 'La fecha de fabricación es obligatoria',
       });
     }
 

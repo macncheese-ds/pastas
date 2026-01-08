@@ -47,30 +47,58 @@ function parseYYMMDD(yymmdd) {
 }
 
 /**
+ * Check if a part number requires manual entry
+ */
+function requiresManualEntry(partNumber) {
+  const modelsRequiringManualEntry = ['K01.027-00M'];
+  return modelsRequiringManualEntry.includes(partNumber.toUpperCase().trim());
+}
+
+/**
  * Parse QR code content
- * Format: "lote,parte,expiracion,fabricacion,serial"
+ * Format: "lote,parte,expiracion,fabricacion,serial" (5 fields)
+ * Or: "lote,parte,expiracion,serial" (4 fields for models without manufacture date)
+ * For models requiring manual entry, manufacture date field may be missing
  */
 function parseQRCode(qrContent) {
   const sanitizedContent = sanitizeScannerInput(qrContent);
   const cleanContent = sanitizedContent.trim();
   const parts = cleanContent.split(',');
 
-  if (parts.length !== 5) {
+  // Accept 4 or 5 fields
+  if (parts.length !== 4 && parts.length !== 5) {
     throw new Error(
-      `QR code must contain 5 comma-separated fields. Found ${parts.length} in: "${cleanContent}"`
+      `QR code must contain 4 or 5 comma-separated fields. Found ${parts.length} in: "${cleanContent}"`
     );
   }
 
-  const [lotNumber, partNumber, expirationRaw, manufactureRaw, lotSerial] = parts;
+  let lotNumber, partNumber, expirationRaw, manufactureRaw, lotSerial;
+  
+  if (parts.length === 5) {
+    // Standard format: lote,parte,expiracion,fabricacion,serial
+    [lotNumber, partNumber, expirationRaw, manufactureRaw, lotSerial] = parts;
+  } else {
+    // Short format (no manufacture date): lote,parte,expiracion,serial
+    [lotNumber, partNumber, expirationRaw, lotSerial] = parts;
+    manufactureRaw = ''; // Empty manufacture date
+  }
 
   if (!lotNumber.trim()) throw new Error('Empty lot number');
   if (!partNumber.trim()) throw new Error('Empty part number');
   if (!expirationRaw.trim()) throw new Error('Empty expiration date');
-  if (!manufactureRaw.trim()) throw new Error('Empty manufacture date');
   if (!lotSerial.trim()) throw new Error('Empty lot serial');
 
   const expirationDate = parseYYMMDD(expirationRaw.trim());
-  const manufactureDate = parseYYMMDD(manufactureRaw.trim());
+  
+  // For models requiring manual entry, manufacture date might be empty
+  let manufactureDate = null;
+  const requiresManual = requiresManualEntry(partNumber);
+  
+  if (manufactureRaw && manufactureRaw.trim()) {
+    manufactureDate = parseYYMMDD(manufactureRaw.trim());
+  } else if (!requiresManual) {
+    throw new Error('Empty manufacture date');
+  }
 
   // Validate not expired
   const expDate = new Date(expirationDate);
@@ -96,6 +124,7 @@ function parseQRCode(qrContent) {
     manufactureDate,
     lotSerial: lotSerial.trim(),
     rawData: cleanContent,
+    requiresManualEntry: requiresManual,
   };
 }
 
@@ -159,4 +188,5 @@ module.exports = {
   isValidViscosity,
   formatDate,
   formatDateTime,
+  requiresManualEntry,
 };
