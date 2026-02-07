@@ -73,7 +73,7 @@ router.get('/', async (req, res) => {
       params = [smt_location];
     }
     
-    query_string += ` ORDER BY created_at DESC LIMIT 100`;
+    query_string += ` ORDER BY expiration_date ASC, created_at ASC`;
 
     const results = await query(query_string, params);
 

@@ -8,6 +8,7 @@ const SMT_PREFIX_MAP = {
   'k01.': 'SMT',
   'k02.': 'SMT',
   'a01.': 'SMT',
+  '611.': 'SMT',
   
   'k03.': 'SMT2',
   'k04.': 'SMT2',

@@ -4,15 +4,18 @@
  * =====================================================
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Tabs from './components/ui/Tabs';
 import FridgeInTab from './components/tabs/FridgeInTab';
 import ReportsTab from './components/tabs/ReportsTab';
 import PartNumbersConfig from './components/tabs/PartNumbersConfig';
+import LoginModal from './components/modals/LoginModal';
+import { login } from './api';
 import {
   HomeIcon,
   ChartBarIcon,
   Cog6ToothIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 
 const tabs = [
@@ -30,11 +33,129 @@ const tabs = [
     id: 'settings',
     label: 'Configuración',
     icon: <Cog6ToothIcon className="h-5 w-5" />,
+    locked: true,
   },
 ];
 
+// Allowed roles for configuration access
+const ALLOWED_CONFIG_ROLES = ['Ingeniero', 'Administrador'];
+
+// Inactivity timeout in milliseconds (2 minutes)
+const INACTIVITY_TIMEOUT = 2 * 60 * 1000;
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('fridge-in');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+  const [accessDeniedMessage, setAccessDeniedMessage] = useState(null);
+  
+  // Inactivity timer ref
+  const inactivityTimerRef = useRef(null);
+
+  // Check if user has access to settings tab
+  const hasSettingsAccess = authenticatedUser && ALLOWED_CONFIG_ROLES.includes(authenticatedUser.rol);
+
+  // Logout function
+  const handleLogout = useCallback(() => {
+    setAuthenticatedUser(null);
+    setActiveTab('fridge-in');
+    // Clear any existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+  }, []);
+
+  // Reset inactivity timer
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    if (authenticatedUser) {
+      inactivityTimerRef.current = setTimeout(() => {
+        handleLogout();
+      }, INACTIVITY_TIMEOUT);
+    }
+  }, [authenticatedUser, handleLogout]);
+
+  // Set up activity listeners for inactivity timeout
+  useEffect(() => {
+    if (!authenticatedUser) {
+      // Clear timer when not authenticated
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      return;
+    }
+
+    // Start the inactivity timer
+    resetInactivityTimer();
+
+    // Activity events to track
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+
+    // Reset timer on any activity
+    const handleActivity = () => {
+      resetInactivityTimer();
+    };
+
+    // Add event listeners
+    activityEvents.forEach(event => {
+      document.addEventListener(event, handleActivity, { passive: true });
+    });
+
+    // Cleanup
+    return () => {
+      activityEvents.forEach(event => {
+        document.removeEventListener(event, handleActivity);
+      });
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [authenticatedUser, resetInactivityTimer]);
+
+  const handleTabChange = (tabId) => {
+    if (tabId === 'settings') {
+      if (hasSettingsAccess) {
+        setActiveTab(tabId);
+        resetInactivityTimer(); // Reset timer on tab change
+      } else {
+        // Need to login
+        setAccessDeniedMessage(null);
+        setShowLoginModal(true);
+      }
+    } else {
+      // If leaving settings tab and authenticated, log out
+      if (activeTab === 'settings' && authenticatedUser) {
+        handleLogout();
+      }
+      setActiveTab(tabId);
+    }
+  };
+
+  const handleLogin = async (credentials) => {
+    setLoginBusy(true);
+    setAccessDeniedMessage(null);
+    try {
+      const result = await login(credentials);
+      if (result.success && result.user) {
+        if (ALLOWED_CONFIG_ROLES.includes(result.user.rol)) {
+          setAuthenticatedUser(result.user);
+          setShowLoginModal(false);
+          setActiveTab('settings');
+        } else {
+          setAccessDeniedMessage(`Acceso denegado. Solo usuarios con rol Ingeniero o Administrador pueden acceder a la configuración. Tu rol actual: ${result.user.rol}`);
+        }
+      }
+    } catch (err) {
+      throw err;
+    } finally {
+      setLoginBusy(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-neutral-900">
@@ -70,6 +191,19 @@ export default function App() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              {authenticatedUser && (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-green-400">
+                    {authenticatedUser.nombre} ({authenticatedUser.rol})
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-xs text-neutral-400 hover:text-white transition-colors"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
               <span className="text-sm text-neutral-400">
                 {new Date().toLocaleDateString('es-MX', {
                   weekday: 'long',
@@ -88,7 +222,16 @@ export default function App() {
         {/* Tabs Navigation */}
         <div className="bg-neutral-800 rounded-lg shadow-sm mb-6 border border-neutral-700">
           <div className="px-6">
-            <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+            <Tabs 
+              tabs={tabs.map(tab => ({
+                ...tab,
+                icon: tab.id === 'settings' && !hasSettingsAccess ? (
+                  <LockClosedIcon className="h-5 w-5" />
+                ) : tab.icon
+              }))} 
+              activeTab={activeTab} 
+              onChange={handleTabChange} 
+            />
           </div>
         </div>
 
@@ -96,7 +239,7 @@ export default function App() {
         <div>
           {activeTab === 'fridge-in' && <FridgeInTab />}
           {activeTab === 'reports' && <ReportsTab />}
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && hasSettingsAccess && (
             <div className="space-y-6">
               <div className="bg-neutral-800 rounded-lg shadow-sm border border-neutral-700 p-6">
                 <PartNumbersConfig />
@@ -171,6 +314,26 @@ export default function App() {
           </p>
         </div>
       </footer>
+
+      {/* Login Modal for Settings Access */}
+      <LoginModal
+        visible={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          setAccessDeniedMessage(null);
+        }}
+        onConfirm={handleLogin}
+        busy={loginBusy}
+      />
+
+      {/* Access Denied Message */}
+      {accessDeniedMessage && showLoginModal && (
+        <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto z-[60]">
+          <div className="bg-red-900/90 border border-red-700 rounded-lg p-4 shadow-lg">
+            <p className="text-sm text-red-200">{accessDeniedMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

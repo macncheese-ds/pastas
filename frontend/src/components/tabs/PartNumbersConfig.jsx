@@ -30,7 +30,6 @@ export default function PartNumbersConfig() {
   const [newPartNumber, setNewPartNumber] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [selectedLines, setSelectedLines] = useState([]);
-  const [newLineName, setNewLineName] = useState('');
   const [selectedPartNumber, setSelectedPartNumber] = useState('');
   const [selectedLine, setSelectedLine] = useState('');
 
@@ -177,15 +176,14 @@ export default function PartNumbersConfig() {
   };
 
   // Add production line
-  const handleAddLine = async (e) => {
-    e.preventDefault();
-    if (!newLineName.trim()) return;
+  const handleAddLine = async (lineName) => {
+    if (!lineName || !lineName.trim()) return;
 
     try {
       const response = await fetch('/api/part-lines/production-lines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ line_name: newLineName.trim() }),
+        body: JSON.stringify({ line_name: lineName.trim() }),
       });
 
       if (!response.ok) {
@@ -193,7 +191,6 @@ export default function PartNumbersConfig() {
         throw new Error(errData.error || 'Error al agregar línea');
       }
 
-      setNewLineName('');
       showSuccess('Línea de producción agregada');
       fetchData();
     } catch (err) {
@@ -474,7 +471,7 @@ export default function PartNumbersConfig() {
         <h3 className="text-lg font-semibold text-white mb-3">Líneas de Producción</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {productionLines.map(line => {
-            const partCount = assignments.filter(a => a.production_line_id === line.id).length;
+            const partCount = assignments.filter(a => a.line_id === line.id).length;
             return (
               <div key={line.id} className="bg-neutral-800 rounded-lg p-4 border border-neutral-700">
                 <div className="flex items-start justify-between mb-2">
@@ -498,9 +495,8 @@ export default function PartNumbersConfig() {
           <button
             onClick={() => {
               const name = prompt('Nombre de la nueva línea (ej: SMT-1):');
-              if (name) {
-                setNewLineName(name);
-                handleAddLine({ preventDefault: () => {} });
+              if (name && name.trim()) {
+                handleAddLine(name);
               }
             }}
             className="flex items-center justify-center bg-neutral-800 border-2 border-dashed border-neutral-600 rounded-lg p-4 hover:border-blue-500 hover:bg-neutral-700/50 transition-colors cursor-pointer"
