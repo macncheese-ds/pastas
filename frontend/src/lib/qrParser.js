@@ -100,22 +100,9 @@ export function parseQRCode(qrContent) {
     throw new Error('Fecha de fabricación vacía');
   }
 
-  // Validate not expired
-  const expDate = new Date(expirationDate);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  expDate.setHours(0, 0, 0, 0);
-
-  if (expDate < today) {
-    const formattedExpDate = expDate.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    throw new Error(
-      `⚠️ PASTA VENCIDA\n\nNo se puede registrar esta pasta.\n\nFecha de expiración: ${formattedExpDate}\n\nPor favor, deseche esta pasta y utilice una con fecha de expiración válida.`
-    );
-  }
+  // Note: Expiration check is handled by the backend API.
+  // If the paste is expired, the backend returns requiresDeviation
+  // and the frontend shows the deviation authorization modal.
 
   return {
     lotNumber: lotNumber.trim(),

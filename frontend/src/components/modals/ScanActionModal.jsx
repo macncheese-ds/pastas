@@ -7,8 +7,8 @@
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
 import { STATUS_NEXT_ACTIONS } from '../../types';
-import { formatDateTime } from '../../lib/qrParser';
-import { CheckCircleIcon, XCircleIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { formatDateTime, calculateDaysRemaining } from '../../lib/qrParser';
+import { CheckCircleIcon, XCircleIcon, ArrowRightIcon, ExclamationTriangleIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
 
 export default function ScanActionModal({
   isOpen,
@@ -20,10 +20,40 @@ export default function ScanActionModal({
   if (!paste) return null;
 
   const nextAction = STATUS_NEXT_ACTIONS[paste.status];
+  if (!nextAction) return null;
+  
+  const isExpired = calculateDaysRemaining(paste.expiration_date) < 0;
+  const hasDeviation = !!paste.deviation_authorized;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={nextAction.title} size="lg">
       <div className="space-y-6">
+        {/* Expiration Warning */}
+        {isExpired && !hasDeviation && (
+          <div className="rounded-lg bg-red-900/40 border-2 border-red-600 p-4">
+            <div className="flex items-center">
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-400 mr-2" />
+              <div>
+                <p className="text-sm font-bold text-red-300">⚠️ PASTA VENCIDA</p>
+                <p className="text-xs text-red-200 mt-1">Se requiere autorización de Calidad para continuar</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Deviation Notice */}
+        {isExpired && hasDeviation && (
+          <div className="rounded-lg bg-amber-900/30 border border-amber-700 p-3">
+            <div className="flex items-center">
+              <ShieldExclamationIcon className="h-5 w-5 text-amber-400 mr-2" />
+              <div>
+                <p className="text-xs font-medium text-amber-300">DESVIACIÓN AUTORIZADA</p>
+                <p className="text-xs text-amber-200">Por: {paste.deviation_authorized_by}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-lg border border-neutral-700 p-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">

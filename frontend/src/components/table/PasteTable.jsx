@@ -8,7 +8,7 @@ import { useState, useMemo } from 'react';
 import StatusBadge from '../ui/StatusBadge';
 import ShelfLifeIndicator from '../ui/ShelfLifeIndicator';
 import WaitTimeCounter from '../ui/WaitTimeCounter';
-import { formatDateTime, formatDate } from '../../lib/qrParser';
+import { formatDateTime, formatDate, calculateDaysRemaining } from '../../lib/qrParser';
 import { EyeIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, XMarkIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 export default function PasteTable({
@@ -233,8 +233,26 @@ export default function PasteTable({
             </tr>
           </thead>
           <tbody className="bg-neutral-800 divide-y divide-neutral-700">
-            {filteredPastes.map((paste) => (
-              <tr key={paste.id} className="hover:bg-neutral-700">
+            {filteredPastes.map((paste) => {
+              const isExpired = calculateDaysRemaining(paste.expiration_date) < 0;
+              const hasDeviation = !!paste.deviation_authorized;
+              const isDiscarded = paste.status === 'discarded';
+              const isFinished = paste.status === 'removed' || paste.status === 'discarded';
+              
+              // Check 24h ambientacion exceeded
+              const isAmbientacionExceeded = paste.status === 'out_fridge' && paste.fridge_out_datetime
+                && (new Date().getTime() - new Date(paste.fridge_out_datetime).getTime()) >= 24 * 60 * 60 * 1000;
+
+              const rowBgClass = isDiscarded 
+                ? 'bg-red-900/20 hover:bg-red-900/30'
+                : isAmbientacionExceeded
+                  ? 'bg-orange-900/20 hover:bg-orange-900/30 border-l-2 border-orange-500'
+                  : isExpired && !hasDeviation && !isFinished
+                    ? 'bg-red-900/10 hover:bg-red-900/20' 
+                    : 'hover:bg-neutral-700';
+
+              return (
+              <tr key={paste.id} className={rowBgClass}>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-blue-400">{paste.did}</div>
                 </td>
@@ -248,7 +266,12 @@ export default function PasteTable({
                   <div className="text-sm text-neutral-200">{paste.part_number}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-white">{formatDate(paste.expiration_date)}</div>
+                  <div className={`text-sm font-medium ${isExpired && !isFinished ? 'text-red-400' : 'text-white'}`}>
+                    {formatDate(paste.expiration_date)}
+                    {isExpired && !isFinished && (
+                      <span className="ml-1 text-xs text-red-500 font-bold">⚠ VENCIDA</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   {paste.smt_location ? (
@@ -260,7 +283,7 @@ export default function PasteTable({
                   )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <StatusBadge status={paste.status} size="sm" />
+                  <StatusBadge status={paste.status} size="sm" expired={!isFinished && isExpired} deviation={hasDeviation} />
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   {paste.status === 'out_fridge' && paste.fridge_out_datetime ? (
@@ -306,19 +329,24 @@ export default function PasteTable({
                         <PencilIcon className="h-5 w-5" />
                       </button>
                     )}
-                    {onAction && paste.status !== 'removed' && (
+                    {onAction && !isFinished && (
                       <button
                         onClick={() => onAction(paste, 'scan')}
-                        className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
-                        title="Procesar"
+                        className={`px-3 py-1 text-xs font-medium text-white rounded transition-colors ${
+                          isExpired && !hasDeviation
+                            ? 'bg-amber-600 hover:bg-amber-700'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                        title={isExpired && !hasDeviation ? 'Requiere desviación' : 'Procesar'}
                       >
-                        Procesar
+                        {isExpired && !hasDeviation ? '⚠ Desviación' : 'Procesar'}
                       </button>
                     )}
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
         </div>

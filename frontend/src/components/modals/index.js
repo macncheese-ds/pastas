@@ -14,3 +14,5 @@ export { default as OpenPasteModal } from './OpenPasteModal';
 export { default as PasteDetailsModal } from './PasteDetailsModal';
 export { default as LoginModal } from './LoginModal';
 export { default as EditDidModal } from './EditDidModal';
+export { default as DeviationModal } from './DeviationModal';
+export { default as AmbientacionExceededModal } from './AmbientacionExceededModal';

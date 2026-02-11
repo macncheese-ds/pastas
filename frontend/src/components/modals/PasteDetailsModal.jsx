@@ -7,12 +7,14 @@
 import Modal from '../ui/Modal';
 import StatusBadge from '../ui/StatusBadge';
 import ShelfLifeIndicator from '../ui/ShelfLifeIndicator';
-import { formatDateTime, formatDate } from '../../lib/qrParser';
+import { formatDateTime, formatDate, calculateDaysRemaining } from '../../lib/qrParser';
 import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
   UserIcon,
+  ExclamationTriangleIcon,
+  ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 
 export default function PasteDetailsModal({
@@ -21,6 +23,10 @@ export default function PasteDetailsModal({
   paste,
 }) {
   if (!paste) return null;
+
+  const isExpired = calculateDaysRemaining(paste.expiration_date) < 0;
+  const hasDeviation = !!paste.deviation_authorized;
+  const isFinished = paste.status === 'removed' || paste.status === 'discarded';
 
   const timeline = [
     {
@@ -67,7 +73,23 @@ export default function PasteDetailsModal({
       icon: XCircleIcon,
       color: 'text-gray-400',
     },
-  ].filter(item => item.datetime);
+    paste.discarded_datetime && {
+      label: 'Descartada',
+      datetime: paste.discarded_datetime,
+      user: null,
+      icon: ExclamationTriangleIcon,
+      color: 'text-red-400',
+      extra: paste.discarded_reason || null,
+    },
+    paste.deviation_authorized_at && {
+      label: 'Desviación Autorizada',
+      datetime: paste.deviation_authorized_at,
+      user: paste.deviation_authorized_by,
+      icon: ShieldExclamationIcon,
+      color: 'text-amber-400',
+      extra: paste.deviation_reason || null,
+    },
+  ].filter(Boolean).filter(item => item.datetime);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalles de Pasta" size="lg">
@@ -94,7 +116,7 @@ export default function PasteDetailsModal({
             <div>
               <span className="text-neutral-400">Estado actual:</span>
               <span className="ml-2">
-                <StatusBadge status={paste.status} />
+                <StatusBadge status={paste.status} expired={!isFinished && isExpired} deviation={hasDeviation} />
               </span>
             </div>
             <div>
@@ -148,6 +170,23 @@ export default function PasteDetailsModal({
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Deviation Info */}
+        {paste.deviation_authorized && (
+          <div className="rounded-lg bg-amber-900/30 border border-amber-700 p-4">
+            <div className="flex items-start">
+              <ShieldExclamationIcon className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-amber-300">Desviación Autorizada</h4>
+                <p className="text-xs text-amber-200 mt-1">Autorizado por: {paste.deviation_authorized_by}</p>
+                <p className="text-xs text-amber-200">Fecha: {formatDateTime(paste.deviation_authorized_at)}</p>
+                {paste.deviation_reason && (
+                  <p className="text-xs text-amber-200 mt-1">Razón: {paste.deviation_reason}</p>
+                )}
+              </div>
             </div>
           </div>
         )}

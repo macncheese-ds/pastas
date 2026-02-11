@@ -9,6 +9,98 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../db');
 const { isValidViscosity } = require('../utils/qrParser');
+const bcrypt = require('bcryptjs');
+const mysql = require('mysql2/promise');
+
+// Roles allowed to authorize deviations
+const DEVIATION_ALLOWED_ROLES = ['Calidad', 'Ingeniero', 'Administrador'];
+
+// Helper: connect to credentials database
+async function createCredConnection() {
+  const config = {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.CRED_DB_NAME || 'credenciales'
+  };
+  return await mysql.createConnection(config);
+}
+
+/**
+ * Check if paste is expired (expiration_date < today)
+ * Returns { expired: true/false, message }
+ */
+function checkExpiration(paste) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expDate = new Date(paste.expiration_date);
+  expDate.setHours(0, 0, 0, 0);
+
+  if (expDate < today) {
+    const formattedDate = expDate.toLocaleDateString('es-MX');
+    return {
+      expired: true,
+      message: `⚠️ PASTA VENCIDA\n\nFecha de expiración: ${formattedDate}\n\nEsta pasta no puede ser utilizada a menos que se autorice una desviación por personal de Calidad.`
+    };
+  }
+  return { expired: false };
+}
+
+/**
+ * Check FEFO/FIFO for a given status level
+ * Ensures pastes at the same status are processed in order (earliest expiration first, then earliest entry)
+ */
+async function checkFEFOForStatus(pasteId, expirationDate, partNumber, statusToCheck) {
+  try {
+    // Check for pastes with earlier expiration in the same status
+    const earlierExpiring = await query(
+      `SELECT id, lot_number, lot_serial, expiration_date, did, created_at
+       FROM solder_paste 
+       WHERE status = ? AND id != ? AND expiration_date < ? AND part_number = ?
+       ORDER BY expiration_date ASC, created_at ASC LIMIT 5`,
+      [statusToCheck, pasteId, expirationDate, partNumber]
+    );
+
+    if (earlierExpiring.length > 0) {
+      const pastesList = earlierExpiring.map(p => {
+        const expDate = new Date(p.expiration_date);
+        const formattedDate = expDate.toLocaleDateString('es-MX');
+        return `• DID: ${p.did}\n  Lote: ${p.lot_number}-${p.lot_serial}\n  Vence: ${formattedDate}`;
+      }).join('\n\n');
+
+      return {
+        violation: true,
+        message: `⚠️ FEFO: Existen ${earlierExpiring.length} pasta(s) con fecha de vencimiento anterior que deben procesarse primero.\n\nDeben procesarse primero:\n${pastesList}`
+      };
+    }
+
+    // FIFO: Check for pastes with same expiration but earlier registration
+    const olderSameExp = await query(
+      `SELECT id, created_at, did, lot_number, lot_serial FROM solder_paste 
+       WHERE expiration_date = ? 
+       AND part_number = ? 
+       AND id != ?
+       AND status = ?
+       AND created_at < (SELECT created_at FROM solder_paste WHERE id = ?)
+       ORDER BY created_at ASC
+       LIMIT 1`,
+      [expirationDate, partNumber, pasteId, statusToCheck, pasteId]
+    );
+
+    if (olderSameExp.length > 0) {
+      return {
+        violation: true,
+        message: `⚠️ FIFO: Existe una pasta más antigua (${new Date(olderSameExp[0].created_at).toLocaleString('es-MX')}) con la misma fecha de vencimiento que debe ser procesada primero.\n\nDID: ${olderSameExp[0].did}\nLote: ${olderSameExp[0].lot_number}-${olderSameExp[0].lot_serial}`
+      };
+    }
+
+    return { violation: false };
+  } catch (error) {
+    console.error('Error checking FEFO for status:', error);
+    return { violation: false };
+  }
+}
 
 /**
  * GET /api/pastes
@@ -239,8 +331,16 @@ router.post('/', async (req, res) => {
     const upperLotSerial = lot_serial?.trim().toUpperCase();
     const upperSmtLocation = smt_location?.trim().toUpperCase();
 
+    // Validate DID - must be exactly 5 characters
+    if (!trimmedDid || trimmedDid.length !== 5) {
+      return res.status(400).json({
+        success: false,
+        error: 'El DID debe tener exactamente 5 caracteres',
+      });
+    }
+
     // Validate required fields
-    if (!trimmedDid || !upperLotNumber || !upperPartNumber || !upperLotSerial || !expiration_date) {
+    if (!upperLotNumber || !upperPartNumber || !upperLotSerial || !expiration_date) {
       return res.status(400).json({
         success: false,
         error: 'Todos los campos son obligatorios',
@@ -255,17 +355,35 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Validate not expired
+    // Check if expired (but allow if would be authorized later)
     const expirationDate = new Date(expiration_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     expirationDate.setHours(0, 0, 0, 0);
 
-    if (expirationDate < today) {
+    console.log(`[DEBUG] Checking expiration - Today: ${today}, Exp: ${expirationDate}, Raw exp param: ${expiration_date}`);
+
+    let isExpired = expirationDate < today;
+    if (isExpired) {
+      // Return error asking for deviation authorization
       const formattedExpDate = expirationDate.toLocaleDateString('es-MX');
+      console.log(`[DEBUG] Pasta vencida detectada - enviando requiresDeviation`);
       return res.status(400).json({
         success: false,
-        error: `No se puede registrar una pasta vencida.\n\nFecha de expiración: ${formattedExpDate}`,
+        error: `PASTA VENCIDA\n\nFecha de expiración: ${formattedExpDate}\n\nEsta pasta está vencida. Para registrarla se requiere autorización de personal de Calidad e Ingeniería.`,
+        data: {
+          requiresDeviation: true,
+          pasteData: {
+            did: trimmedDid,
+            lot_number: upperLotNumber,
+            part_number: upperPartNumber,
+            lot_serial: upperLotSerial,
+            manufacture_date,
+            expiration_date,
+            smt_location: upperSmtLocation || null,
+            user_name: user_name.trim(),
+          }
+        }
       });
     }
 
@@ -371,6 +489,190 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * POST /api/pastes/authorize-expired
+ * Create a paste that exceeded expiration date with dual authorization (Calidad + Ingeniero)
+ */
+router.post('/authorize-expired', async (req, res) => {
+  try {
+    const { did, lot_number, part_number, lot_serial, manufacture_date, expiration_date, smt_location, user_name, employee_calidad, password_calidad, employee_ingeniero, password_ingeniero, reason } = req.body;
+
+    // Validate credentials
+    if (!employee_calidad || !password_calidad || !employee_ingeniero || !password_ingeniero) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe ingresar credenciales de Calidad Y Ingenieria para registrar una pasta vencida',
+      });
+    }
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe proporcionar una razón para autorizar esta pasta vencida',
+      });
+    }
+
+    // Authenticate both users
+    let conn;
+    try {
+      conn = await createCredConnection();
+      
+      // Normalize and fetch Calidad user
+      let normalizedCalidad = String(employee_calidad).trim();
+      const matchCalidad = normalizedCalidad.match(/^0*(\\d+)([A-Za-z])?$/);
+      if (matchCalidad) {
+        const number = matchCalidad[1];
+        const letter = matchCalidad[2] || 'A';
+        normalizedCalidad = `${number}${letter}`;
+      } else {
+        normalizedCalidad = normalizedCalidad.replace(/^0+/, '') + 'A';
+      }
+
+      const [rowsCalidad] = await conn.execute(
+        'SELECT id, nombre, usuario, num_empleado, pass_hash, rol FROM users WHERE num_empleado = ? OR usuario = ? LIMIT 1',
+        [normalizedCalidad, normalizedCalidad]
+      );
+
+      if (!rowsCalidad || rowsCalidad.length === 0) {
+        await conn.end();
+        return res.status(401).json({ success: false, error: 'Usuario de Calidad no encontrado' });
+      }
+
+      const userCalidad = rowsCalidad[0];
+      
+      // Verify Calidad role
+      if (userCalidad.rol !== 'Calidad') {
+        await conn.end();
+        return res.status(403).json({
+          success: false,
+          error: `Primer usuario debe ser Calidad. Rol actual: ${userCalidad.rol}`,
+        });
+      }
+
+      const hashCalidad = Buffer.isBuffer(userCalidad.pass_hash) ? userCalidad.pass_hash.toString() : userCalidad.pass_hash;
+      const okCalidad = await bcrypt.compare(password_calidad, hashCalidad);
+      
+      if (!okCalidad) {
+        await conn.end();
+        return res.status(401).json({ success: false, error: 'Contraseña de Calidad incorrecta' });
+      }
+
+      // Normalize and fetch Ingeniero user
+      let normalizedIngeniero = String(employee_ingeniero).trim();
+      const matchIngeniero = normalizedIngeniero.match(/^0*(\\d+)([A-Za-z])?$/);
+      if (matchIngeniero) {
+        const number = matchIngeniero[1];
+        const letter = matchIngeniero[2] || 'A';
+        normalizedIngeniero = `${number}${letter}`;
+      } else {
+        normalizedIngeniero = normalizedIngeniero.replace(/^0+/, '') + 'A';
+      }
+
+      const [rowsIngeniero] = await conn.execute(
+        'SELECT id, nombre, usuario, num_empleado, pass_hash, rol FROM users WHERE num_empleado = ? OR usuario = ? LIMIT 1',
+        [normalizedIngeniero, normalizedIngeniero]
+      );
+
+      if (!rowsIngeniero || rowsIngeniero.length === 0) {
+        await conn.end();
+        return res.status(401).json({ success: false, error: 'Usuario de Ingenieria no encontrado' });
+      }
+
+      const userIngeniero = rowsIngeniero[0];
+      
+      // Verify Ingeniero role
+      if (userIngeniero.rol !== 'Ingeniero') {
+        await conn.end();
+        return res.status(403).json({
+          success: false,
+          error: `Segundo usuario debe ser Ingeniero. Rol actual: ${userIngeniero.rol}`,
+        });
+      }
+
+      const hashIngeniero = Buffer.isBuffer(userIngeniero.pass_hash) ? userIngeniero.pass_hash.toString() : userIngeniero.pass_hash;
+      const okIngeniero = await bcrypt.compare(password_ingeniero, hashIngeniero);
+      
+      if (!okIngeniero) {
+        await conn.end();
+        return res.status(401).json({ success: false, error: 'Contraseña de Ingenieria incorrecta' });
+      }
+
+      await conn.end();
+
+      // Both credentials valid - proceed with paste creation
+      const trimmedDid = did?.trim();
+      const upperLotNumber = lot_number?.trim().toUpperCase();
+      const upperPartNumber = part_number?.trim().toUpperCase();
+      const upperLotSerial = lot_serial?.trim().toUpperCase();
+      const upperSmtLocation = smt_location?.trim().toUpperCase();
+
+      // Validate fields
+      if (!trimmedDid || !upperLotNumber || !upperPartNumber || !upperLotSerial || !expiration_date) {
+        return res.status(400).json({
+          success: false,
+          error: 'Todos los campos son obligatorios',
+        });
+      }
+
+      // Check if already exists
+      const existing = await query(
+        `SELECT id FROM solder_paste WHERE lot_number = ? AND lot_serial = ?`,
+        [upperLotNumber, upperLotSerial]
+      );
+
+      if (existing.length > 0) {
+        return res.status(409).json({
+          success: false,
+          error: 'Ya existe un registro con este lote y serial',
+        });
+      }
+
+      // Create paste with deviation authorized by both users
+      const authText = `${userCalidad.nombre} (Calidad) y ${userIngeniero.nombre} (Ingenieria)`;
+      const result = await query(
+        `INSERT INTO solder_paste (
+          did, lot_number, part_number, lot_serial,
+          smt_location, manufacture_date, expiration_date,
+          fridge_in_datetime, fridge_in_user, status,
+          deviation_authorized, deviation_authorized_by, deviation_authorized_at, deviation_reason
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?, 'in_fridge', TRUE, ?, NOW(), ?)`,
+        [trimmedDid, upperLotNumber, upperPartNumber, upperLotSerial, upperSmtLocation || null, manufacture_date, expiration_date, user_name.trim(), authText, reason.trim()]
+      );
+
+      // Get created record
+      const newPaste = await query(
+        `SELECT * FROM solder_paste WHERE id = ?`,
+        [result.insertId]
+      );
+
+      // Log the scan
+      await query(
+        `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, 'fridge_in', ?, ?)`,
+        [result.insertId, user_name.trim(), `Registro inicial (con desviación autorizada por ${authText}) - DID: ${trimmedDid} - Entrada a refrigerador`]
+      );
+
+      // Log deviation from both users
+      await query(
+        `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, 'deviation_authorized', ?, ?)`,
+        [result.insertId, userCalidad.nombre, `Desviación autorizada al registrar por Calidad e Ingenieria: ${reason.trim()}`]
+      );
+
+      res.status(201).json({
+        success: true,
+        data: newPaste[0],
+        message: `Pasta vencida registrada con desviación autorizada por Calidad e Ingenieria`,
+      });
+    } catch (authError) {
+      if (conn) await conn.end().catch(() => {});
+      console.error('Auth error in authorize-expired:', authError);
+      return res.status(500).json({ success: false, error: 'Error de autenticación' });
+    }
+  } catch (error) {
+    console.error('Error creating expired paste:', error);
+    res.status(500).json({ success: false, error: 'Error al crear la pasta' });
+  }
+});
+
+/**
  * GET /api/pastes/:id
  * Get paste by ID
  */
@@ -441,41 +743,6 @@ router.delete('/:id', async (req, res) => {
 });
 
 /**
- * Check FEFO: Verify if this paste with the same expiration date should be used
- * Returns error if an earlier-registered paste with same expiration exists
- * Only checks pastes that are STILL IN FRIDGE - pastes already out don't block
- */
-async function checkFEFO(pasteId, expirationDate, partNumber) {
-  try {
-    // Find other pastes with same expiration date and part number
-    // ONLY CHECK PASTES IN FRIDGE - once out, they don't block other pastes
-    const olderPastes = await query(
-      `SELECT id, created_at, did, lot_number, lot_serial FROM solder_paste 
-       WHERE expiration_date = ? 
-       AND part_number = ? 
-       AND id != ?
-       AND status = 'in_fridge'
-       AND created_at < (SELECT created_at FROM solder_paste WHERE id = ?)
-       ORDER BY created_at ASC
-       LIMIT 1`,
-      [expirationDate, partNumber, pasteId, pasteId]
-    );
-
-    if (olderPastes.length > 0) {
-      return {
-        violation: true,
-        message: `Existe una pasta más antigua (${new Date(olderPastes[0].created_at).toLocaleString('es-MX')}) con la misma fecha de vencimiento que debe ser usada primero (FIFO).\n\nDID: ${olderPastes[0].did}\nLote: ${olderPastes[0].lot_number}-${olderPastes[0].lot_serial}`
-      };
-    }
-
-    return { violation: false };
-  } catch (error) {
-    console.error('Error checking FEFO:', error);
-    return { violation: false };
-  }
-}
-
-/**
  * POST /api/pastes/:id/scan
  * Process a scan and update paste status
  */
@@ -523,6 +790,21 @@ router.post('/:id/scan', async (req, res) => {
       });
     }
 
+    // Check expiration - block expired pastes unless deviation is authorized
+    const expirationCheck = checkExpiration(paste);
+    if (expirationCheck.expired && !paste.deviation_authorized) {
+      return res.status(400).json({
+        success: false,
+        error: expirationCheck.message,
+        data: { 
+          expired: true, 
+          requiresDeviation: true,
+          pasteId: paste.id,
+          expirationDate: paste.expiration_date
+        },
+      });
+    }
+
     let updateQuery = '';
     let updateParams = [];
     let newStatus;
@@ -538,39 +820,12 @@ router.post('/:id/scan', async (req, res) => {
         }
 
         // FEFO validation - check for earlier expiring pastes ONLY IN FRIDGE
-        // If pastes are already out (out_fridge or later states), they don't block
-        const earlierExpiringPastes = await query(
-          `SELECT id, lot_number, lot_serial, expiration_date, part_number, did
-           FROM solder_paste 
-           WHERE status = 'in_fridge' AND id != ? AND expiration_date < ? AND part_number = ?
-           ORDER BY expiration_date ASC LIMIT 5`,
-          [pasteId, paste.expiration_date, paste.part_number]
-        );
-
-        if (earlierExpiringPastes.length > 0) {
-          const pastesList = earlierExpiringPastes.map(p => {
-            const expDate = new Date(p.expiration_date);
-            const formattedDate = expDate.toLocaleDateString('es-MX');
-            return `• DID: ${p.did}\n  Lote: ${p.lot_number}-${p.lot_serial}\n  Vence: ${formattedDate}`;
-          }).join('\n\n');
-
-          const currentExpDate = new Date(paste.expiration_date);
-          const currentFormattedDate = currentExpDate.toLocaleDateString('es-MX');
-
+        const fefoCheckFridge = await checkFEFOForStatus(pasteId, paste.expiration_date, paste.part_number, 'in_fridge');
+        if (fefoCheckFridge.violation) {
           return res.status(400).json({
             success: false,
-            error: `⚠️ FEFO: Existen ${earlierExpiringPastes.length} pasta(s) con fecha de vencimiento anterior que deben usarse primero.\n\nPasta actual:\n• DID: ${paste.did}\n  Lote: ${paste.lot_number}-${paste.lot_serial}\n  Vence: ${currentFormattedDate}\n\nDeben usarse primero:\n${pastesList}`,
-            data: { fefoViolation: true, earlierExpiringPastes },
-          });
-        }
-
-        // FIFO validation - check for older pastes with same expiration date ONLY IN FRIDGE
-        const fefoCheck = await checkFEFO(pasteId, paste.expiration_date, paste.part_number);
-        if (fefoCheck.violation) {
-          return res.status(400).json({
-            success: false,
-            error: `⚠️ FIFO: ${fefoCheck.message}`,
-            data: { fifoViolation: true },
+            error: fefoCheckFridge.message,
+            data: { fefoViolation: true },
           });
         }
 
@@ -585,6 +840,37 @@ router.post('/:id/scan', async (req, res) => {
           return res.status(400).json({
             success: false,
             error: `No se puede iniciar mezclado. Estado actual: ${currentStatus}`,
+          });
+        }
+
+        // Check 24-hour ambientacion limit
+        if (paste.fridge_out_datetime) {
+          const fridgeOutTime24 = new Date(paste.fridge_out_datetime);
+          const now24 = new Date();
+          const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+          const elapsed24 = now24.getTime() - fridgeOutTime24.getTime();
+
+          if (elapsed24 >= twentyFourHoursMs) {
+            const hoursExceeded = Math.floor(elapsed24 / (60 * 60 * 1000));
+            return res.status(400).json({
+              success: false,
+              error: `⚠️ AMBIENTACIÓN EXCEDIDA\n\nEsta pasta lleva ${hoursExceeded} horas en ambientación (máximo permitido: 24 horas).\n\nDebe ser retirada. Se requiere que un usuario confirme con sus credenciales que está informado para proceder con el retiro.`,
+              data: { 
+                ambientacionExceeded: true, 
+                pasteId: paste.id,
+                hoursElapsed: hoursExceeded
+              },
+            });
+          }
+        }
+
+        // FEFO/FIFO check for pastes in out_fridge status
+        const fefoCheckOutFridge = await checkFEFOForStatus(pasteId, paste.expiration_date, paste.part_number, 'out_fridge');
+        if (fefoCheckOutFridge.violation) {
+          return res.status(400).json({
+            success: false,
+            error: fefoCheckOutFridge.message,
+            data: { fefoViolation: true },
           });
         }
 
@@ -674,6 +960,16 @@ router.post('/:id/scan', async (req, res) => {
           return res.status(400).json({
             success: false,
             error: `No se puede registrar apertura. Estado actual: ${currentStatus}`,
+          });
+        }
+
+        // FEFO/FIFO check for pastes in viscosity_ok status
+        const fefoCheckViscosity = await checkFEFOForStatus(pasteId, paste.expiration_date, paste.part_number, 'viscosity_ok');
+        if (fefoCheckViscosity.violation) {
+          return res.status(400).json({
+            success: false,
+            error: fefoCheckViscosity.message,
+            data: { fefoViolation: true },
           });
         }
 
@@ -851,6 +1147,362 @@ router.put('/:id/did', async (req, res) => {
       success: false,
       error: 'Error al actualizar el DID',
     });
+  }
+});
+
+/**
+ * POST /api/pastes/:id/deviation
+ * Authorize deviation for expired paste - requires BOTH Calidad and Ingenieria personnel
+ */
+router.post('/:id/deviation', async (req, res) => {
+  try {
+    const pasteId = parseInt(req.params.id, 10);
+
+    if (isNaN(pasteId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'ID de pasta invalido',
+      });
+    }
+
+    const { employee_calidad, password_calidad, employee_ingeniero, password_ingeniero, reason } = req.body;
+
+    // Validate inputs
+    if (!employee_calidad || !password_calidad ||!employee_ingeniero || !password_ingeniero) {
+      return res.status(400).json({
+        success: false,
+        error: 'Credenciales de Calidad e Ingenieria requeridas',
+      });
+    }
+
+    if (!reason || !reason.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe proporcionar una razon para la desviacion',
+      });
+    }
+
+    // Get paste
+    const results = await query(`SELECT * FROM solder_paste WHERE id = ?`, [pasteId]);
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pasta no encontrada',
+      });
+    }
+
+    const paste = results[0];
+
+    // Verify paste is actually expired
+    const expirationCheck = checkExpiration(paste);
+    if (!expirationCheck.expired) {
+      return res.status(400).json({
+        success: false,
+        error: 'Esta pasta no esta vencida, no requiere desviacion',
+      });
+    }
+
+    // Already authorized?
+    if (paste.deviation_authorized) {
+      return res.json({
+        success: true,
+        message: 'La desviacion ya fue autorizada previamente',
+        data: paste,
+      });
+    }
+
+    // Authenticate both users
+    let conn;
+    try {
+      conn = await createCredConnection();
+      
+      // Helper function to authenticate
+      async function authenticateUser(employeeInput, password) {
+        let normalized = String(employeeInput).trim();
+        const match = normalized.match(/^0*(\\d+)([A-Za-z])?$/);
+        if (match) {
+          const number = match[1];
+          const letter = match[2] || 'A';
+          normalized = `${number}${letter}`;
+        } else {
+          normalized = normalized.replace(/^0+/, '') + 'A';
+        }
+
+        const [rows] = await conn.execute(
+          'SELECT id, nombre, usuario, num_empleado, pass_hash, rol FROM users WHERE num_empleado = ? OR usuario = ? LIMIT 1',
+          [normalized, normalized]
+        );
+
+        if (!rows || rows.length === 0) {
+          throw new Error('Usuario no encontrado: ' + employeeInput);
+        }
+
+        const user = rows[0];
+        const hash = Buffer.isBuffer(user.pass_hash) ? user.pass_hash.toString() : user.pass_hash;
+        const ok = await bcrypt.compare(password, hash);
+        
+        if (!ok) {
+          throw new Error('Contrasena incorrecta para: ' + user.nombre);
+        }
+
+        return user;
+      }
+
+      // Authenticate Calidad user
+      const userCalidad = await authenticateUser(employee_calidad, password_calidad);
+      if (userCalidad.rol !== 'Calidad') {
+        await conn.end();
+        return res.status(403).json({
+          success: false,
+          error: `El primer usuario debe ser de Calidad. Usuario actual: ${userCalidad.nombre} (${userCalidad.rol})`,
+        });
+      }
+
+      // Authenticate Ingeniero user
+      const userIngeniero = await authenticateUser(employee_ingeniero, password_ingeniero);
+      if (userIngeniero.rol !== 'Ingeniero') {
+        await conn.end();
+        return res.status(403).json({
+          success: false,
+          error: `El segundo usuario debe ser Ingeniero. Usuario actual: ${userIngeniero.nombre} (${userIngeniero.rol})`,
+        });
+      }
+
+      await conn.end();
+
+      // Authorize deviation with both signatures
+      const authorizedBy = `${userCalidad.nombre} (Calidad) y ${userIngeniero.nombre} (Ingenieria)`;
+      
+      await query(
+        `UPDATE solder_paste 
+         SET deviation_authorized = TRUE, 
+             deviation_authorized_by = ?, 
+             deviation_authorized_at = NOW(), 
+             deviation_reason = ?
+         WHERE id = ?`,
+        [authorizedBy, reason.trim(), pasteId]
+      );
+
+      // Log the deviation from both users
+      await query(
+        `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, 'deviation_authorized', ?, ?)`,
+        [pasteId, `${userCalidad.nombre} / ${userIngeniero.nombre}`, `Desviacion autorizada por Calidad (${userCalidad.nombre}) e Ingenieria (${userIngeniero.nombre}). Razon: ${reason.trim()}`]
+      );
+
+      // Get updated paste
+      const updatedPaste = await query(`SELECT * FROM solder_paste WHERE id = ?`, [pasteId]);
+
+      res.json({
+        success: true,
+        data: updatedPaste[0],
+        message: `Desviacion autorizada por Calidad e Ingenieria`,
+      });
+    } catch (authError) {
+      if (conn) await conn.end().catch(() => {});
+      console.error('Auth error in deviation:', authError);
+      return res.status(401).json({ success: false, error: authError.message || 'Error de autenticacion' });
+    }
+  } catch (error) {
+    console.error('Error authorizing deviation:', error);
+    res.status(500).json({ success: false, error: 'Error al autorizar desviacion' });
+  }
+});
+
+/**
+ * POST /api/pastes/:id/retire-ambientacion
+ * Retire a paste that exceeded 24h in ambientacion - requires user credentials as acknowledgment
+ */
+router.post('/:id/retire-ambientacion', async (req, res) => {
+  try {
+    const pasteId = parseInt(req.params.id, 10);
+    if (isNaN(pasteId)) {
+      return res.status(400).json({ success: false, error: 'ID de pasta inválido' });
+    }
+
+    const { employee_input, password } = req.body;
+
+    // Validate credentials
+    if (!employee_input || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe ingresar credenciales para confirmar el retiro',
+      });
+    }
+
+    // Get paste
+    const results = await query(`SELECT * FROM solder_paste WHERE id = ?`, [pasteId]);
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, error: 'Pasta no encontrada' });
+    }
+
+    const paste = results[0];
+    if (paste.status !== 'out_fridge') {
+      return res.status(400).json({ success: false, error: 'Esta pasta no está en ambientación' });
+    }
+
+    // Verify 24h exceeded
+    if (paste.fridge_out_datetime) {
+      const fridgeOut = new Date(paste.fridge_out_datetime);
+      const now = new Date();
+      const elapsed = now.getTime() - fridgeOut.getTime();
+      if (elapsed < 24 * 60 * 60 * 1000) {
+        return res.status(400).json({ success: false, error: 'Esta pasta aún no excede 24 horas en ambientación' });
+      }
+    }
+
+    // Authenticate user
+    let conn;
+    try {
+      conn = await createCredConnection();
+      
+      let normalized = String(employee_input).trim();
+      const match = normalized.match(/^0*(\d+)([A-Za-z])?$/);
+      if (match) {
+        const number = match[1];
+        const letter = match[2] || 'A';
+        normalized = `${number}${letter}`;
+      } else {
+        normalized = normalized.replace(/^0+/, '') + 'A';
+      }
+
+      const [rows] = await conn.execute(
+        'SELECT id, nombre, usuario, num_empleado, pass_hash, rol FROM users WHERE num_empleado = ? OR usuario = ? LIMIT 1',
+        [normalized, normalized]
+      );
+      await conn.end();
+
+      if (!rows || rows.length === 0) {
+        return res.status(401).json({ success: false, error: 'Usuario no encontrado' });
+      }
+
+      const user = rows[0];
+      const hash = Buffer.isBuffer(user.pass_hash) ? user.pass_hash.toString() : user.pass_hash;
+      const ok = await bcrypt.compare(password, hash);
+      
+      if (!ok) {
+        return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
+      }
+
+      const reason = 'Tiempo de ambientación excedido (más de 24 horas)';
+
+      // Mark as removed with reason
+      await query(
+        `UPDATE solder_paste 
+         SET status = 'removed', 
+             removed_datetime = NOW(), 
+             removed_user = ?
+         WHERE id = ?`,
+        [user.nombre, pasteId]
+      );
+
+      // Log the retirement
+      await query(
+        `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, 'removed', ?, ?)`,
+        [pasteId, user.nombre, `Retirada por ${user.nombre} - ${reason}`]
+      );
+
+      const updatedPaste = await query(`SELECT * FROM solder_paste WHERE id = ?`, [pasteId]);
+
+      res.json({
+        success: true,
+        data: updatedPaste[0],
+        message: `Pasta retirada por ${user.nombre}. Razón: ${reason}`,
+      });
+    } catch (authError) {
+      if (conn) await conn.end().catch(() => {});
+      console.error('Auth error in retire-ambientacion:', authError);
+      return res.status(500).json({ success: false, error: 'Error de autenticación' });
+    }
+  } catch (error) {
+    console.error('Error retiring paste:', error);
+    res.status(500).json({ success: false, error: 'Error al retirar la pasta' });
+  }
+});
+
+/**
+ * POST /api/pastes/:id/return-to-fridge
+ * Return an out_fridge paste back to in_fridge if less than 24h have elapsed
+ */
+router.post('/:id/return-to-fridge', async (req, res) => {
+  try {
+    const pasteId = req.params.id;
+    const { user_name } = req.body;
+
+    if (!user_name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nombre de usuario requerido para registrar la devolución',
+      });
+    }
+
+    // Fetch paste
+    const results = await query(`SELECT * FROM solder_paste WHERE id = ?`, [pasteId]);
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, error: 'Pasta no encontrada' });
+    }
+
+    const paste = results[0];
+
+    // Verify current status is out_fridge
+    if (paste.status !== 'out_fridge') {
+      return res.status(400).json({
+        success: false,
+        error: `Solo pastas en ambientación pueden devolverse. Estado actual: ${paste.status}`,
+      });
+    }
+
+    // Verify fridge_out_datetime exists
+    if (!paste.fridge_out_datetime) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se puede determinar el tiempo de ambientación',
+      });
+    }
+
+    // Verify less than 24h have elapsed
+    const fridgeOut = new Date(paste.fridge_out_datetime);
+    const now = new Date();
+    const elapsed = now.getTime() - fridgeOut.getTime();
+    const hoursElapsed = elapsed / (60 * 60 * 1000);
+    const maxHours = 24;
+
+    if (elapsed >= maxHours * 60 * 60 * 1000) {
+      return res.status(400).json({
+        success: false,
+        error: `Ya han pasado ${Math.floor(hoursElapsed)} horas. No se puede devolver a refrigeración después de 24 horas.`,
+      });
+    }
+
+    // Update paste status back to in_fridge
+    // Clear fridge_out timestamps since we're going back
+    await query(
+      `UPDATE solder_paste 
+       SET status = 'in_fridge',
+           fridge_out_datetime = NULL,
+           fridge_out_user = NULL
+       WHERE id = ?`,
+      [pasteId]
+    );
+
+    // Log the return action
+    const hoursRemaining = Math.round((maxHours * 60 * 60 * 1000 - elapsed) / (60 * 60 * 1000) * 10) / 10;
+    await query(
+      `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, 'fridge_in', ?, ?)`,
+      [pasteId, user_name.trim(), `Devuelta a refrigeración por ${user_name.trim()} - ${hoursRemaining} horas de ambientación`]
+    );
+
+    // Get updated record
+    const updatedPaste = await query(`SELECT * FROM solder_paste WHERE id = ?`, [pasteId]);
+
+    res.json({
+      success: true,
+      data: updatedPaste[0],
+      message: `Pasta devuelta a refrigeración. Tiempo de ambientación: ${hoursRemaining} horas.`,
+    });
+  } catch (error) {
+    console.error('Error returning paste to fridge:', error);
+    res.status(500).json({ success: false, error: 'Error al devolver la pasta a refrigeración' });
   }
 });
 

@@ -18,6 +18,8 @@ import {
   PasteDetailsModal,
   LoginModal,
   EditDidModal,
+  DeviationModal,
+  AmbientacionExceededModal,
 } from '../modals';
 import { parseQRCode, canStartMixing } from '../../lib/qrParser';
 import { STATUS_NEXT_ACTIONS } from '../../types';
@@ -46,12 +48,17 @@ export default function FridgeInTab({ smtLocation }) {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showEditDidModal, setShowEditDidModal] = useState(false);
+  const [showDeviationModal, setShowDeviationModal] = useState(false);
+  const [showAmbientacionModal, setShowAmbientacionModal] = useState(false);
+  const [ambientacionHours, setAmbientacionHours] = useState(0);
+  const [isDeviationForNewPaste, setIsDeviationForNewPaste] = useState(false);
   
   // Working data
   const [parsedQRData, setParsedQRData] = useState(null);
   const [selectedPaste, setSelectedPaste] = useState(null);
   const [authorizedLines, setAuthorizedLines] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingDeviationAction, setPendingDeviationAction] = useState(null);
   
   // Auth state
   const [currentUser, setCurrentUser] = useState(null);
@@ -140,12 +147,26 @@ export default function FridgeInTab({ smtLocation }) {
             const paste = existingPastes[0];
             setSelectedPaste(paste);
             
+            // Check if paste is discarded
+            if (paste.status === 'discarded') {
+              setError('Esta pasta fue descartada y no puede ser utilizada.\n\nRazón: ' + (paste.discarded_reason || 'No especificada'));
+              return;
+            }
+            
             // Determine which action to show based on status
             switch (paste.status) {
               case 'in_fridge':
                 setShowScanActionModal(true);
                 break;
               case 'out_fridge':
+                // Check 24h exceeded first
+                if (paste.fridge_out_datetime) {
+                  const elapsed = new Date().getTime() - new Date(paste.fridge_out_datetime).getTime();
+                  const hoursElapsed = elapsed / (60 * 60 * 1000);
+                  setAmbientacionHours(hoursElapsed);
+                  setShowAmbientacionModal(true);
+                  return;
+                }
                 if (canStartMixing(paste.fridge_out_datetime)) {
                   setShowScanActionModal(true);
                 } else {
@@ -190,12 +211,26 @@ export default function FridgeInTab({ smtLocation }) {
           if (existingPaste && existingPaste.id) {
             setSelectedPaste(existingPaste);
             
+            // Check if paste is discarded
+            if (existingPaste.status === 'discarded') {
+              setError('Esta pasta fue descartada y no puede ser utilizada.\n\nRazón: ' + (existingPaste.discarded_reason || 'No especificada'));
+              return;
+            }
+            
             // Determine which action to show based on status
             switch (existingPaste.status) {
               case 'in_fridge':
                 setShowScanActionModal(true);
                 break;
               case 'out_fridge':
+                // Check 24h exceeded first
+                if (existingPaste.fridge_out_datetime) {
+                  const elapsed = new Date().getTime() - new Date(existingPaste.fridge_out_datetime).getTime();
+                  const hoursElapsed = elapsed / (60 * 60 * 1000);
+                  setAmbientacionHours(hoursElapsed);
+                  setShowAmbientacionModal(true);
+                  return;
+                }
                 if (canStartMixing(existingPaste.fridge_out_datetime)) {
                   setShowScanActionModal(true);
                 } else {
@@ -255,6 +290,28 @@ export default function FridgeInTab({ smtLocation }) {
 
         if (!response.ok) {
           const errData = await response.json();
+          console.log('[DEBUG] POST /pastes error response:', errData);
+          
+          // Check if this is an expired paste requiring deviation
+          const requiresDeviation = errData?.data?.requiresDeviation;
+          const pasteData = errData?.data?.pasteData;
+          
+          if (requiresDeviation && pasteData) {
+            console.log('[DEBUG] ✓ PASTA VENCIDA - SHOWING DEVIATION MODAL');
+            setShowNewPasteModal(false);
+            setSelectedPaste({
+              ...pasteData,
+              id: null,
+              expiration_date: pasteData.expiration_date,
+            });
+            setIsDeviationForNewPaste(true);
+            setShowDeviationModal(true);
+            setIsProcessing(false);
+            setParsedQRData(null);
+            console.log('[DEBUG] DeviationModal showing with pasteData:', pasteData);
+            return;
+          }
+          
           throw new Error(errData.error || 'Error al crear la pasta');
         }
 
@@ -298,6 +355,27 @@ export default function FridgeInTab({ smtLocation }) {
 
         if (!response.ok) {
           const errData = await response.json();
+          console.log('[DEBUG] Manual entry error response:', errData);
+          
+          // Check if pasta is expired and requires deviation
+          const requiresDeviation = errData?.data?.requiresDeviation;
+          const pasteData = errData?.data?.pasteData;
+          
+          if (requiresDeviation && pasteData) {
+            console.log('[DEBUG] ✓ PASTA VENCIDA (Manual) - SHOWING DEVIATION MODAL');
+            setShowManualEntryModal(false);
+            setSelectedPaste({
+              ...pasteData,
+              id: null,
+              expiration_date: pasteData.expiration_date,
+            });
+            setIsDeviationForNewPaste(true);
+            setShowDeviationModal(true);
+            setIsProcessing(false);
+            console.log('[DEBUG] DeviationModal showing with pasteData:', pasteData);
+            return;
+          }
+          
           throw new Error(errData.error || 'Error al crear la pasta');
         }
 
@@ -347,6 +425,26 @@ export default function FridgeInTab({ smtLocation }) {
 
         if (!response.ok) {
           const errData = await response.json();
+          // Check if ambientacion exceeded - show special modal
+          if (errData.data?.ambientacionExceeded) {
+            setShowScanActionModal(false);
+            setAmbientacionHours(errData.data.hoursElapsed || 24);
+            setShowAmbientacionModal(true);
+            return;
+          }
+          // Check if this is an expiration error requiring deviation
+          if (errData.data && errData.data.requiresDeviation) {
+            setShowScanActionModal(false);
+            if (errData.data.pasteData) {
+              setSelectedPaste(errData.data.pasteData);
+              setIsDeviationForNewPaste(true);
+            }
+            setPendingDeviationAction(() => async () => {
+              await handleScanAction();
+            });
+            setShowDeviationModal(true);
+            return;
+          }
           throw new Error(errData.error || 'Error al procesar la acción');
         }
 
@@ -388,6 +486,26 @@ export default function FridgeInTab({ smtLocation }) {
 
         if (!response.ok) {
           const errData = await response.json();
+          // Check if ambientacion exceeded
+          if (errData.data?.ambientacionExceeded) {
+            setShowViscosityModal(false);
+            setAmbientacionHours(errData.data.hoursElapsed || 24);
+            setShowAmbientacionModal(true);
+            return;
+          }
+          // Check if this is an expiration error requiring deviation
+          if (errData.data && errData.data.requiresDeviation) {
+            setShowViscosityModal(false);
+            if (errData.data.pasteData) {
+              setSelectedPaste(errData.data.pasteData);
+              setIsDeviationForNewPaste(true);
+            }
+            setPendingDeviationAction(() => async () => {
+              await handleViscositySubmit(value);
+            });
+            setShowDeviationModal(true);
+            return;
+          }
           const serverMsg = errData.error || errData.message || (errData.data && errData.data.message) || JSON.stringify(errData);
           throw new Error(serverMsg || 'Error al registrar la viscosidad');
         }
@@ -396,7 +514,6 @@ export default function FridgeInTab({ smtLocation }) {
         setSelectedPaste(null);
         fetchPastes();
       } catch (err) {
-        // Close all modals and show error
         setShowScanActionModal(false);
         setShowViscosityModal(false);
         setShowOpenPasteModal(false);
@@ -430,6 +547,26 @@ export default function FridgeInTab({ smtLocation }) {
 
         if (!response.ok) {
           const errData = await response.json();
+          // Check if ambientacion exceeded
+          if (errData.data?.ambientacionExceeded) {
+            setShowOpenPasteModal(false);
+            setAmbientacionHours(errData.data.hoursElapsed || 24);
+            setShowAmbientacionModal(true);
+            return;
+          }
+          // Check if this is an expiration error requiring deviation
+          if (errData.data && errData.data.requiresDeviation) {
+            setShowOpenPasteModal(false);
+            if (errData.data.pasteData) {
+              setSelectedPaste(errData.data.pasteData);
+              setIsDeviationForNewPaste(true);
+            }
+            setPendingDeviationAction(() => async () => {
+              await handleOpenPaste(selectedSmtLocation);
+            });
+            setShowDeviationModal(true);
+            return;
+          }
           const serverMsg = errData.error || errData.message || (errData.data && errData.data.message) || JSON.stringify(errData);
           throw new Error(serverMsg || 'Error al abrir la pasta');
         }
@@ -438,7 +575,6 @@ export default function FridgeInTab({ smtLocation }) {
         setSelectedPaste(null);
         fetchPastes();
       } catch (err) {
-        // Close all modals and show error
         setShowScanActionModal(false);
         setShowViscosityModal(false);
         setShowOpenPasteModal(false);
@@ -521,6 +657,21 @@ export default function FridgeInTab({ smtLocation }) {
         setShowEditDidModal(true);
         break;
       case 'scan':
+        // Check if paste is discarded
+        if (paste.status === 'discarded') {
+          setError('Esta pasta fue descartada y no puede ser utilizada');
+          setSelectedPaste(null);
+          return;
+        }
+        // Check 24h exceeded for out_fridge
+        if (paste.status === 'out_fridge' && paste.fridge_out_datetime) {
+          const elapsed = new Date().getTime() - new Date(paste.fridge_out_datetime).getTime();
+          if (elapsed >= 24 * 60 * 60 * 1000) {
+            setAmbientacionHours(Math.floor(elapsed / (60 * 60 * 1000)));
+            setShowAmbientacionModal(true);
+            return;
+          }
+        }
         if (paste.status === 'out_fridge' && !canStartMixing(paste.fridge_out_datetime)) {
           setShowWaitTimeModal(true);
         } else if (paste.status === 'mixing' || paste.status === 'rejected') {
@@ -547,6 +698,48 @@ export default function FridgeInTab({ smtLocation }) {
       default:
         break;
     }
+  };
+
+  // Handle deviation authorization
+  const handleDeviationAuthorized = async (data) => {
+    setShowDeviationModal(false);
+    setIsDeviationForNewPaste(false);
+    setParsedQRData(null);
+    // Refresh paste data and retry pending action
+    await fetchPastes();
+    
+    if (pendingDeviationAction) {
+      const action = pendingDeviationAction;
+      setPendingDeviationAction(null);
+      // Re-fetch the selected paste with updated deviation status
+      try {
+        const response = await fetch(`/api/pastes/${selectedPaste.id}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data) {
+            setSelectedPaste(result.data);
+          }
+        }
+      } catch (err) {
+        console.error('Error refetching paste:', err);
+      }
+    }
+  };
+
+  // Handle ambientacion exceeded retirement
+  const handleAmbientacionRetired = async (data) => {
+    setShowAmbientacionModal(false);
+    setSelectedPaste(null);
+    setAmbientacionHours(0);
+    await fetchPastes();
+  };
+
+  // Handle paste returned to fridge
+  const handleReturnedToFridge = async (data) => {
+    setShowAmbientacionModal(false);
+    setSelectedPaste(null);
+    setAmbientacionHours(0);
+    await fetchPastes();
   };
 
   return (
@@ -719,6 +912,33 @@ export default function FridgeInTab({ smtLocation }) {
         }}
         onConfirm={handleLogin}
         busy={isProcessing}
+      />
+
+      <DeviationModal
+        isOpen={showDeviationModal}
+        onClose={() => {
+          setShowDeviationModal(false);
+          setIsDeviationForNewPaste(false);
+          setPendingDeviationAction(null);
+          setParsedQRData(null);
+        }}
+        onAuthorized={handleDeviationAuthorized}
+        paste={selectedPaste}
+        isLoading={isProcessing}
+        isNewPaste={isDeviationForNewPaste}
+      />
+
+      <AmbientacionExceededModal
+        isOpen={showAmbientacionModal}
+        onClose={() => {
+          setShowAmbientacionModal(false);
+          setSelectedPaste(null);
+          setAmbientacionHours(0);
+        }}
+        onRetired={handleAmbientacionRetired}
+        onReturnedToFridge={handleReturnedToFridge}
+        paste={selectedPaste}
+        hoursElapsed={ambientacionHours}
       />
     </div>
   );

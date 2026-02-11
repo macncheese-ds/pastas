@@ -183,7 +183,7 @@ export default function App() {
               </div>
               <div className="ml-3">
                 <h1 className="text-xl font-bold text-white">
-                  SMT Paste Tracker
+                  HKL Solder Paste Management System
                 </h1>
                 <p className="text-xs text-neutral-400">
                   Sistema de Trazabilidad de Pastas de Soldadura

@@ -54,6 +54,11 @@ const TAB_COLORS = {
     inactive: 'border-transparent text-neutral-400 hover:text-neutral-300 hover:border-neutral-600',
     badge: 'bg-gray-900/50 text-gray-300',
   },
+  red: {
+    active: 'border-red-500 text-red-400',
+    inactive: 'border-transparent text-neutral-400 hover:text-neutral-300 hover:border-neutral-600',
+    badge: 'bg-red-900/50 text-red-300',
+  },
 };
 
 export default function PasteTableWithTabs({
