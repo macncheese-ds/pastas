@@ -11,6 +11,16 @@ import ReportsTab from './components/tabs/ReportsTab';
 import PartNumbersConfig from './components/tabs/PartNumbersConfig';
 import LoginModal from './components/modals/LoginModal';
 import { login } from './api';
+import {
+  Bars3Icon,
+  ChevronLeftIcon,
+  ClipboardDocumentListIcon,
+  ChartBarIcon,
+  CogIcon,
+  ArrowRightOnRectangleIcon,
+  CpuChipIcon,
+  ChevronRightIcon,
+} from '@heroicons/react/24/outline';
 
 const ALLOWED_CONFIG_ROLES = ['Ingeniero', 'Administrador'];
 const INACTIVITY_TIMEOUT = 2 * 60 * 1000;
@@ -102,38 +112,43 @@ export default function App() {
 
   /* ─── Sidebar items ─────────────────────────────────── */
   const mainLinks = [
-    { id: 'fridge-in', label: 'Dashboard', icon: '📋' },
-    { id: 'reports', label: 'Reportes', icon: '📊' },
+    { id: 'fridge-in', label: 'Dashboard', Icon: ClipboardDocumentListIcon },
+    { id: 'reports', label: 'Reportes', Icon: ChartBarIcon },
   ];
 
   const configLinks = [
-    { id: 'settings', label: 'Part Numbers', icon: '⚙️' },
+    { id: 'settings', label: 'Part Numbers', Icon: CogIcon },
   ];
 
   return (
     <div className="layout">
       {/* ── Sidebar ─────────────────────────────────────── */}
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-        {/* Toggle button */}
-        <button
-          className="sidebar-toggle"
-          onClick={() => setSidebarCollapsed(prev => !prev)}
-          title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
-        >
-          {sidebarCollapsed ? '▸' : '◂'}
-        </button>
-
         {/* Brand */}
         <div className="sidebar-brand">
-          <svg className="brand-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: '#60a5fa' }}>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-          </svg>
+          <CpuChipIcon className="brand-icon" style={{ color: '#60a5fa' }} />
           <span className="brand-text">Solder Paste</span>
         </div>
 
         {/* Navigation */}
         <nav className="sidebar-nav">
+          {/* Toggle button - at top of nav */}
+          <button
+            className="nav-link sidebar-collapse-btn"
+            onClick={() => setSidebarCollapsed(prev => !prev)}
+            title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+          >
+            <span className="nav-icon">
+              {sidebarCollapsed
+                ? <Bars3Icon className="h-5 w-5" />
+                : <ChevronLeftIcon className="h-5 w-5" />
+              }
+            </span>
+            <span className="nav-label">Colapsar</span>
+          </button>
+
+          <div className="sidebar-divider" />
+
           {mainLinks.map(link => (
             <button
               key={link.id}
@@ -141,7 +156,9 @@ export default function App() {
               onClick={() => handleTabChange(link.id)}
               title={sidebarCollapsed ? link.label : undefined}
             >
-              <span className="nav-icon">{link.icon}</span>
+              <span className="nav-icon">
+                <link.Icon className="h-5 w-5" />
+              </span>
               <span className="nav-label">{link.label}</span>
             </button>
           ))}
@@ -154,7 +171,9 @@ export default function App() {
               title={sidebarCollapsed ? 'Configuración' : undefined}
             >
               <span className="section-label">Configuración</span>
-              <span className={`toggle-arrow ${configOpen ? 'open' : ''}`}>▸</span>
+              <span className={`toggle-arrow ${configOpen ? 'open' : ''}`}>
+                <ChevronRightIcon className="h-3 w-3" />
+              </span>
             </button>
             {configOpen && (
               <div className="sidebar-section-links">
@@ -165,7 +184,9 @@ export default function App() {
                     onClick={() => handleTabChange(link.id)}
                     title={sidebarCollapsed ? link.label : undefined}
                   >
-                    <span className="nav-icon">{link.icon}</span>
+                    <span className="nav-icon">
+                      <link.Icon className="h-5 w-5" />
+                    </span>
                     <span className="nav-label">{link.label}</span>
                   </button>
                 ))}
@@ -182,17 +203,13 @@ export default function App() {
                     ? authenticatedUser.nombre?.charAt(0)
                     : `${authenticatedUser.nombre} (${authenticatedUser.rol})`}
                 </span>
-                <button onClick={handleLogout} className="btn btn-danger btn-sm btn-block">
-                  {sidebarCollapsed ? '✕' : 'Cerrar sesión'}
+                <button onClick={handleLogout} className="nav-link sidebar-logout-btn">
+                  <span className="nav-icon">
+                    <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                  </span>
+                  <span className="nav-label">Cerrar sesión</span>
                 </button>
               </>
-            )}
-            {!sidebarCollapsed && (
-              <span className="user-chip" style={{ fontSize: '.68rem', opacity: .55 }}>
-                {new Date().toLocaleDateString('es-MX', {
-                  weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-                })}
-              </span>
             )}
           </div>
         </nav>
