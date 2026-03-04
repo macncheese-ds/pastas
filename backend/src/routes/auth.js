@@ -6,16 +6,22 @@ dotenv.config();
 
 const router = express.Router();
 
-// Helper para conectar a credenciales DB
-async function createCredConnection() {
-  const config = {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.CRED_DB_NAME || 'credenciales'
-  };
-  return await mysql.createConnection(config);
+// Credential database connection pool (cached)
+let _credPool = null;
+function getCredPool() {
+  if (!_credPool) {
+    _credPool = mysql.createPool({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.CRED_DB_NAME || 'credenciales',
+      waitForConnections: true,
+      connectionLimit: 5,
+      queueLimit: 0,
+    });
+  }
+  return _credPool;
 }
 
 // Normalizar entrada de empleado
@@ -39,15 +45,17 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'employee_input y password requeridos' });
   }
 
+  let conn;
   try {
     const normalized = normalizeEmployeeInput(employee_input);
-    const conn = await createCredConnection();
-    
+    conn = await getCredPool().getConnection();
+
     const [rows] = await conn.execute(
       'SELECT id, nombre, usuario, num_empleado, pass_hash, rol FROM users WHERE num_empleado = ? OR usuario = ? LIMIT 1',
       [normalized, normalized]
     );
-    await conn.end();
+    conn.release();
+    conn = null;
 
     if (!rows || rows.length === 0) {
       return res.status(401).json({ message: 'Usuario no encontrado' });
@@ -69,6 +77,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
+    if (conn) try { conn.release(); } catch (_) { }
     console.error('Auth error:', err);
     res.status(500).json({ message: 'Error de autenticación' });
   }

@@ -15,16 +15,26 @@ const mysql = require('mysql2/promise');
 // Roles allowed to authorize deviations
 const DEVIATION_ALLOWED_ROLES = ['Calidad', 'Ingeniero', 'Administrador'];
 
-// Helper: connect to credentials database
-async function createCredConnection() {
-  const config = {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.CRED_DB_NAME || 'credenciales'
-  };
-  return await mysql.createConnection(config);
+// Helper: get credentials database connection pool (cached)
+let _credPool = null;
+function getCredPool() {
+  if (!_credPool) {
+    _credPool = mysql.createPool({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.CRED_DB_NAME || 'credenciales',
+      waitForConnections: true,
+      connectionLimit: 5,
+      queueLimit: 0,
+    });
+  }
+  return _credPool;
+}
+
+async function getCredConnection() {
+  return await getCredPool().getConnection();
 }
 
 /**
@@ -49,53 +59,47 @@ function checkExpiration(paste) {
 
 /**
  * Check FEFO/FIFO for a given status level
- * Ensures pastes at the same status are processed in order (earliest expiration first, then earliest entry)
+ * Single query: finds pastes that should be processed before this one
+ * (earlier expiration, or same expiration but registered earlier)
  */
 async function checkFEFOForStatus(pasteId, expirationDate, partNumber, statusToCheck) {
   try {
-    // Check for pastes with earlier expiration in the same status
-    const earlierExpiring = await query(
-      `SELECT id, lot_number, lot_serial, expiration_date, did, created_at
-       FROM solder_paste 
-       WHERE status = ? AND id != ? AND expiration_date < ? AND part_number = ?
-       ORDER BY expiration_date ASC, created_at ASC LIMIT 5`,
-      [statusToCheck, pasteId, expirationDate, partNumber]
+    const earlierPastes = await query(
+      `SELECT id, lot_number, lot_serial, expiration_date, did, created_at,
+              CASE WHEN expiration_date < ? THEN 'fefo' ELSE 'fifo' END AS violation_type
+       FROM solder_paste
+       WHERE status = ? AND id != ? AND part_number = ?
+         AND (
+           expiration_date < ?
+           OR (expiration_date = ? AND created_at < (SELECT created_at FROM solder_paste WHERE id = ?))
+         )
+       ORDER BY expiration_date ASC, created_at ASC
+       LIMIT 5`,
+      [expirationDate, statusToCheck, pasteId, partNumber, expirationDate, expirationDate, pasteId]
     );
 
-    if (earlierExpiring.length > 0) {
-      const pastesList = earlierExpiring.map(p => {
+    if (earlierPastes.length === 0) return { violation: false };
+
+    const fefoViolations = earlierPastes.filter(p => p.violation_type === 'fefo');
+
+    if (fefoViolations.length > 0) {
+      const pastesList = fefoViolations.map(p => {
         const expDate = new Date(p.expiration_date);
-        const formattedDate = expDate.toLocaleDateString('es-MX');
-        return `• DID: ${p.did}\n  Lote: ${p.lot_number}-${p.lot_serial}\n  Vence: ${formattedDate}`;
+        return `• DID: ${p.did}\n  Lote: ${p.lot_number}-${p.lot_serial}\n  Vence: ${expDate.toLocaleDateString('es-MX')}`;
       }).join('\n\n');
 
       return {
         violation: true,
-        message: `⚠️ FEFO: Existen ${earlierExpiring.length} pasta(s) con fecha de vencimiento anterior que deben procesarse primero.\n\nDeben procesarse primero:\n${pastesList}`
+        message: `⚠️ FEFO: Existen ${fefoViolations.length} pasta(s) con fecha de vencimiento anterior que deben procesarse primero.\n\nDeben procesarse primero:\n${pastesList}`
       };
     }
 
-    // FIFO: Check for pastes with same expiration but earlier registration
-    const olderSameExp = await query(
-      `SELECT id, created_at, did, lot_number, lot_serial FROM solder_paste 
-       WHERE expiration_date = ? 
-       AND part_number = ? 
-       AND id != ?
-       AND status = ?
-       AND created_at < (SELECT created_at FROM solder_paste WHERE id = ?)
-       ORDER BY created_at ASC
-       LIMIT 1`,
-      [expirationDate, partNumber, pasteId, statusToCheck, pasteId]
-    );
-
-    if (olderSameExp.length > 0) {
-      return {
-        violation: true,
-        message: `⚠️ FIFO: Existe una pasta más antigua (${new Date(olderSameExp[0].created_at).toLocaleString('es-MX')}) con la misma fecha de vencimiento que debe ser procesada primero.\n\nDID: ${olderSameExp[0].did}\nLote: ${olderSameExp[0].lot_number}-${olderSameExp[0].lot_serial}`
-      };
-    }
-
-    return { violation: false };
+    // FIFO violation
+    const p = earlierPastes[0];
+    return {
+      violation: true,
+      message: `⚠️ FIFO: Existe una pasta más antigua (${new Date(p.created_at).toLocaleString('es-MX')}) con la misma fecha de vencimiento que debe ser procesada primero.\n\nDID: ${p.did}\nLote: ${p.lot_number}-${p.lot_serial}`
+    };
   } catch (error) {
     console.error('Error checking FEFO for status:', error);
     return { violation: false };
@@ -514,7 +518,7 @@ router.post('/authorize-expired', async (req, res) => {
     // Authenticate both users
     let conn;
     try {
-      conn = await createCredConnection();
+      conn = await getCredConnection();
 
       // Normalize and fetch Calidad user
       let normalizedCalidad = String(employee_calidad).trim();
@@ -533,7 +537,7 @@ router.post('/authorize-expired', async (req, res) => {
       );
 
       if (!rowsCalidad || rowsCalidad.length === 0) {
-        await conn.end();
+        conn.release();
         return res.status(401).json({ success: false, error: 'Usuario de Calidad no encontrado' });
       }
 
@@ -541,7 +545,7 @@ router.post('/authorize-expired', async (req, res) => {
 
       // Verify Calidad role
       if (userCalidad.rol !== 'Calidad') {
-        await conn.end();
+        conn.release();
         return res.status(403).json({
           success: false,
           error: `Primer usuario debe ser Calidad. Rol actual: ${userCalidad.rol}`,
@@ -552,7 +556,7 @@ router.post('/authorize-expired', async (req, res) => {
       const okCalidad = await bcrypt.compare(password_calidad, hashCalidad);
 
       if (!okCalidad) {
-        await conn.end();
+        conn.release();
         return res.status(401).json({ success: false, error: 'Contraseña de Calidad incorrecta' });
       }
 
@@ -573,7 +577,7 @@ router.post('/authorize-expired', async (req, res) => {
       );
 
       if (!rowsIngeniero || rowsIngeniero.length === 0) {
-        await conn.end();
+        conn.release();
         return res.status(401).json({ success: false, error: 'Usuario de Ingenieria no encontrado' });
       }
 
@@ -581,7 +585,7 @@ router.post('/authorize-expired', async (req, res) => {
 
       // Verify Ingeniero role
       if (userIngeniero.rol !== 'Ingeniero') {
-        await conn.end();
+        conn.release();
         return res.status(403).json({
           success: false,
           error: `Segundo usuario debe ser Ingeniero. Rol actual: ${userIngeniero.rol}`,
@@ -592,11 +596,11 @@ router.post('/authorize-expired', async (req, res) => {
       const okIngeniero = await bcrypt.compare(password_ingeniero, hashIngeniero);
 
       if (!okIngeniero) {
-        await conn.end();
+        conn.release();
         return res.status(401).json({ success: false, error: 'Contraseña de Ingenieria incorrecta' });
       }
 
-      await conn.end();
+      conn.release();
 
       // Both credentials valid - proceed with paste creation
       const trimmedDid = did?.trim();
@@ -662,7 +666,7 @@ router.post('/authorize-expired', async (req, res) => {
         message: `Pasta vencida registrada con desviación autorizada por Calidad e Ingenieria`,
       });
     } catch (authError) {
-      if (conn) await conn.end().catch(() => { });
+      if (conn) try { conn.release(); } catch (_) { }
       console.error('Auth error in authorize-expired:', authError);
       return res.status(500).json({ success: false, error: 'Error de autenticación' });
     }
@@ -1232,7 +1236,7 @@ router.post('/:id/deviation', async (req, res) => {
     // Authenticate both users
     let conn;
     try {
-      conn = await createCredConnection();
+      conn = await getCredConnection();
 
       // Helper function to authenticate
       async function authenticateUser(employeeInput, password) {
@@ -1269,7 +1273,7 @@ router.post('/:id/deviation', async (req, res) => {
       // Authenticate Calidad user
       const userCalidad = await authenticateUser(employee_calidad, password_calidad);
       if (userCalidad.rol !== 'Calidad') {
-        await conn.end();
+        conn.release();
         return res.status(403).json({
           success: false,
           error: `El primer usuario debe ser de Calidad. Usuario actual: ${userCalidad.nombre} (${userCalidad.rol})`,
@@ -1279,14 +1283,14 @@ router.post('/:id/deviation', async (req, res) => {
       // Authenticate Ingeniero user
       const userIngeniero = await authenticateUser(employee_ingeniero, password_ingeniero);
       if (userIngeniero.rol !== 'Ingeniero') {
-        await conn.end();
+        conn.release();
         return res.status(403).json({
           success: false,
           error: `El segundo usuario debe ser Ingeniero. Usuario actual: ${userIngeniero.nombre} (${userIngeniero.rol})`,
         });
       }
 
-      await conn.end();
+      conn.release();
 
       // Authorize deviation with both signatures
       const authorizedBy = `${userCalidad.nombre} (Calidad) y ${userIngeniero.nombre} (Ingenieria)`;
@@ -1316,7 +1320,7 @@ router.post('/:id/deviation', async (req, res) => {
         message: `Desviacion autorizada por Calidad e Ingenieria`,
       });
     } catch (authError) {
-      if (conn) await conn.end().catch(() => { });
+      if (conn) try { conn.release(); } catch (_) { }
       console.error('Auth error in deviation:', authError);
       return res.status(401).json({ success: false, error: authError.message || 'Error de autenticacion' });
     }
@@ -1371,7 +1375,7 @@ router.post('/:id/retire-ambientacion', async (req, res) => {
     // Authenticate user
     let conn;
     try {
-      conn = await createCredConnection();
+      conn = await getCredConnection();
 
       let normalized = String(employee_input).trim();
       const match = normalized.match(/^0*(\d+)([A-Za-z])?$/);
@@ -1387,7 +1391,7 @@ router.post('/:id/retire-ambientacion', async (req, res) => {
         'SELECT id, nombre, usuario, num_empleado, pass_hash, rol FROM users WHERE num_empleado = ? OR usuario = ? LIMIT 1',
         [normalized, normalized]
       );
-      await conn.end();
+      conn.release();
 
       if (!rows || rows.length === 0) {
         return res.status(401).json({ success: false, error: 'Usuario no encontrado' });
@@ -1427,7 +1431,7 @@ router.post('/:id/retire-ambientacion', async (req, res) => {
         message: `Pasta retirada por ${user.nombre}. Razón: ${reason}`,
       });
     } catch (authError) {
-      if (conn) await conn.end().catch(() => { });
+      if (conn) try { conn.release(); } catch (_) { }
       console.error('Auth error in retire-ambientacion:', authError);
       return res.status(500).json({ success: false, error: 'Error de autenticación' });
     }
