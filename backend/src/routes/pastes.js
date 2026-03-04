@@ -159,12 +159,12 @@ router.get('/', async (req, res) => {
     // Filter by smt_location if provided
     let query_string = `SELECT * FROM solder_paste`;
     let params = [];
-    
+
     if (smt_location) {
       query_string += ` WHERE smt_location = ?`;
       params = [smt_location];
     }
-    
+
     query_string += ` ORDER BY expiration_date ASC, created_at ASC`;
 
     const results = await query(query_string, params);
@@ -515,7 +515,7 @@ router.post('/authorize-expired', async (req, res) => {
     let conn;
     try {
       conn = await createCredConnection();
-      
+
       // Normalize and fetch Calidad user
       let normalizedCalidad = String(employee_calidad).trim();
       const matchCalidad = normalizedCalidad.match(/^0*(\\d+)([A-Za-z])?$/);
@@ -538,7 +538,7 @@ router.post('/authorize-expired', async (req, res) => {
       }
 
       const userCalidad = rowsCalidad[0];
-      
+
       // Verify Calidad role
       if (userCalidad.rol !== 'Calidad') {
         await conn.end();
@@ -550,7 +550,7 @@ router.post('/authorize-expired', async (req, res) => {
 
       const hashCalidad = Buffer.isBuffer(userCalidad.pass_hash) ? userCalidad.pass_hash.toString() : userCalidad.pass_hash;
       const okCalidad = await bcrypt.compare(password_calidad, hashCalidad);
-      
+
       if (!okCalidad) {
         await conn.end();
         return res.status(401).json({ success: false, error: 'Contraseña de Calidad incorrecta' });
@@ -578,7 +578,7 @@ router.post('/authorize-expired', async (req, res) => {
       }
 
       const userIngeniero = rowsIngeniero[0];
-      
+
       // Verify Ingeniero role
       if (userIngeniero.rol !== 'Ingeniero') {
         await conn.end();
@@ -590,7 +590,7 @@ router.post('/authorize-expired', async (req, res) => {
 
       const hashIngeniero = Buffer.isBuffer(userIngeniero.pass_hash) ? userIngeniero.pass_hash.toString() : userIngeniero.pass_hash;
       const okIngeniero = await bcrypt.compare(password_ingeniero, hashIngeniero);
-      
+
       if (!okIngeniero) {
         await conn.end();
         return res.status(401).json({ success: false, error: 'Contraseña de Ingenieria incorrecta' });
@@ -662,7 +662,7 @@ router.post('/authorize-expired', async (req, res) => {
         message: `Pasta vencida registrada con desviación autorizada por Calidad e Ingenieria`,
       });
     } catch (authError) {
-      if (conn) await conn.end().catch(() => {});
+      if (conn) await conn.end().catch(() => { });
       console.error('Auth error in authorize-expired:', authError);
       return res.status(500).json({ success: false, error: 'Error de autenticación' });
     }
@@ -796,8 +796,8 @@ router.post('/:id/scan', async (req, res) => {
       return res.status(400).json({
         success: false,
         error: expirationCheck.message,
-        data: { 
-          expired: true, 
+        data: {
+          expired: true,
           requiresDeviation: true,
           pasteId: paste.id,
           expirationDate: paste.expiration_date
@@ -855,8 +855,8 @@ router.post('/:id/scan', async (req, res) => {
             return res.status(400).json({
               success: false,
               error: `⚠️ AMBIENTACIÓN EXCEDIDA\n\nEsta pasta lleva ${hoursExceeded} horas en ambientación (máximo permitido: 24 horas).\n\nDebe ser retirada. Se requiere que un usuario confirme con sus credenciales que está informado para proceder con el retiro.`,
-              data: { 
-                ambientacionExceeded: true, 
+              data: {
+                ambientacionExceeded: true,
                 pasteId: paste.id,
                 hoursElapsed: hoursExceeded
               },
@@ -904,10 +904,28 @@ router.post('/:id/scan', async (req, res) => {
           }
         }
 
-        updateQuery = `UPDATE solder_paste SET mixing_start_datetime = NOW(), mixing_start_user = ?, status = 'mixing' WHERE id = ?`;
-        updateParams = [user_name.trim(), pasteId];
-        newStatus = 'mixing';
-        logNotes = 'Inicio de mezclado';
+        // Check if another paste in the same lot has already been mixed
+        const lotMixCheck = await query(
+          `SELECT id, mixing_start_datetime, mixing_start_user FROM solder_paste 
+           WHERE lot_number = ? AND id != ? AND mixing_start_datetime IS NOT NULL 
+           AND status IN ('mixing', 'viscosity_ok', 'opened', 'removed')
+           ORDER BY mixing_start_datetime ASC LIMIT 1`,
+          [paste.lot_number, pasteId]
+        );
+
+        if (lotMixCheck.length > 0) {
+          // Another paste in the same lot was already mixed - inherit mix time
+          const firstMixed = lotMixCheck[0];
+          updateQuery = `UPDATE solder_paste SET mixing_start_datetime = ?, mixing_start_user = ?, status = 'mixing' WHERE id = ?`;
+          updateParams = [firstMixed.mixing_start_datetime, user_name.trim(), pasteId];
+          newStatus = 'mixing';
+          logNotes = `Inicio de mezclado (heredado del lote - pasta #${firstMixed.id})`;
+        } else {
+          updateQuery = `UPDATE solder_paste SET mixing_start_datetime = NOW(), mixing_start_user = ?, status = 'mixing' WHERE id = ?`;
+          updateParams = [user_name.trim(), pasteId];
+          newStatus = 'mixing';
+          logNotes = 'Inicio de mezclado (primera del lote)';
+        }
         break;
 
       case 'viscosity_check':
@@ -1168,7 +1186,7 @@ router.post('/:id/deviation', async (req, res) => {
     const { employee_calidad, password_calidad, employee_ingeniero, password_ingeniero, reason } = req.body;
 
     // Validate inputs
-    if (!employee_calidad || !password_calidad ||!employee_ingeniero || !password_ingeniero) {
+    if (!employee_calidad || !password_calidad || !employee_ingeniero || !password_ingeniero) {
       return res.status(400).json({
         success: false,
         error: 'Credenciales de Calidad e Ingenieria requeridas',
@@ -1215,7 +1233,7 @@ router.post('/:id/deviation', async (req, res) => {
     let conn;
     try {
       conn = await createCredConnection();
-      
+
       // Helper function to authenticate
       async function authenticateUser(employeeInput, password) {
         let normalized = String(employeeInput).trim();
@@ -1240,7 +1258,7 @@ router.post('/:id/deviation', async (req, res) => {
         const user = rows[0];
         const hash = Buffer.isBuffer(user.pass_hash) ? user.pass_hash.toString() : user.pass_hash;
         const ok = await bcrypt.compare(password, hash);
-        
+
         if (!ok) {
           throw new Error('Contrasena incorrecta para: ' + user.nombre);
         }
@@ -1272,7 +1290,7 @@ router.post('/:id/deviation', async (req, res) => {
 
       // Authorize deviation with both signatures
       const authorizedBy = `${userCalidad.nombre} (Calidad) y ${userIngeniero.nombre} (Ingenieria)`;
-      
+
       await query(
         `UPDATE solder_paste 
          SET deviation_authorized = TRUE, 
@@ -1298,7 +1316,7 @@ router.post('/:id/deviation', async (req, res) => {
         message: `Desviacion autorizada por Calidad e Ingenieria`,
       });
     } catch (authError) {
-      if (conn) await conn.end().catch(() => {});
+      if (conn) await conn.end().catch(() => { });
       console.error('Auth error in deviation:', authError);
       return res.status(401).json({ success: false, error: authError.message || 'Error de autenticacion' });
     }
@@ -1354,7 +1372,7 @@ router.post('/:id/retire-ambientacion', async (req, res) => {
     let conn;
     try {
       conn = await createCredConnection();
-      
+
       let normalized = String(employee_input).trim();
       const match = normalized.match(/^0*(\d+)([A-Za-z])?$/);
       if (match) {
@@ -1378,7 +1396,7 @@ router.post('/:id/retire-ambientacion', async (req, res) => {
       const user = rows[0];
       const hash = Buffer.isBuffer(user.pass_hash) ? user.pass_hash.toString() : user.pass_hash;
       const ok = await bcrypt.compare(password, hash);
-      
+
       if (!ok) {
         return res.status(401).json({ success: false, error: 'Contraseña incorrecta' });
       }
@@ -1409,7 +1427,7 @@ router.post('/:id/retire-ambientacion', async (req, res) => {
         message: `Pasta retirada por ${user.nombre}. Razón: ${reason}`,
       });
     } catch (authError) {
-      if (conn) await conn.end().catch(() => {});
+      if (conn) await conn.end().catch(() => { });
       console.error('Auth error in retire-ambientacion:', authError);
       return res.status(500).json({ success: false, error: 'Error de autenticación' });
     }

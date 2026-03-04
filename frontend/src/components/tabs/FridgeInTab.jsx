@@ -36,7 +36,7 @@ export default function FridgeInTab({ smtLocation }) {
   const [pastes, setPastes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Modal states
   const [showNewPasteModal, setShowNewPasteModal] = useState(false);
   const [showScanActionModal, setShowScanActionModal] = useState(false);
@@ -52,14 +52,14 @@ export default function FridgeInTab({ smtLocation }) {
   const [showAmbientacionModal, setShowAmbientacionModal] = useState(false);
   const [ambientacionHours, setAmbientacionHours] = useState(0);
   const [isDeviationForNewPaste, setIsDeviationForNewPaste] = useState(false);
-  
+
   // Working data
   const [parsedQRData, setParsedQRData] = useState(null);
   const [selectedPaste, setSelectedPaste] = useState(null);
   const [authorizedLines, setAuthorizedLines] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingDeviationAction, setPendingDeviationAction] = useState(null);
-  
+
   // Auth state
   const [currentUser, setCurrentUser] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
@@ -69,7 +69,7 @@ export default function FridgeInTab({ smtLocation }) {
     try {
       setIsLoading(true);
       setError(null);
-      const url = smtLocation 
+      const url = smtLocation
         ? `/api/pastes?smt_location=${encodeURIComponent(smtLocation)}`
         : '/api/pastes';
       const response = await fetch(url);
@@ -109,7 +109,7 @@ export default function FridgeInTab({ smtLocation }) {
       if (result.success && result.user) {
         setCurrentUser(result.user);
         setShowLoginModal(false);
-        
+
         // Execute pending action if any
         if (pendingAction) {
           await pendingAction(result.user);
@@ -132,7 +132,7 @@ export default function FridgeInTab({ smtLocation }) {
   const handleScan = async (qrData) => {
     try {
       setError(null); // Clear any previous errors
-      
+
       // Try to parse as QR code first
       let parsed = null;
       try {
@@ -146,33 +146,27 @@ export default function FridgeInTab({ smtLocation }) {
           if (Array.isArray(existingPastes) && existingPastes.length > 0) {
             const paste = existingPastes[0];
             setSelectedPaste(paste);
-            
+
             // Check if paste is discarded
             if (paste.status === 'discarded') {
               setError('Esta pasta fue descartada y no puede ser utilizada.\n\nRazón: ' + (paste.discarded_reason || 'No especificada'));
               return;
             }
-            
+
             // Determine which action to show based on status
             switch (paste.status) {
               case 'in_fridge':
                 setShowScanActionModal(true);
                 break;
-              case 'out_fridge':
-                // Check 24h exceeded first
-                if (paste.fridge_out_datetime) {
-                  const elapsed = new Date().getTime() - new Date(paste.fridge_out_datetime).getTime();
-                  const hoursElapsed = elapsed / (60 * 60 * 1000);
-                  setAmbientacionHours(hoursElapsed);
-                  setShowAmbientacionModal(true);
-                  return;
-                }
-                if (canStartMixing(paste.fridge_out_datetime)) {
-                  setShowScanActionModal(true);
-                } else {
-                  setShowWaitTimeModal(true);
-                }
+              case 'out_fridge': {
+                // Always show ambientacion modal for out_fridge pastes (allows return-to-fridge at any time)
+                const elapsed = paste.fridge_out_datetime
+                  ? (new Date().getTime() - new Date(paste.fridge_out_datetime).getTime()) / (60 * 60 * 1000)
+                  : 0;
+                setAmbientacionHours(elapsed);
+                setShowAmbientacionModal(true);
                 break;
+              }
               case 'mixing':
                 setShowViscosityModal(true);
                 break;
@@ -206,37 +200,31 @@ export default function FridgeInTab({ smtLocation }) {
         if (existingResponse.ok) {
           const result = await existingResponse.json();
           const existingPaste = result.data;
-          
+
           // Check if paste exists (will be object for single paste, null if not found)
           if (existingPaste && existingPaste.id) {
             setSelectedPaste(existingPaste);
-            
+
             // Check if paste is discarded
             if (existingPaste.status === 'discarded') {
               setError('Esta pasta fue descartada y no puede ser utilizada.\n\nRazón: ' + (existingPaste.discarded_reason || 'No especificada'));
               return;
             }
-            
+
             // Determine which action to show based on status
             switch (existingPaste.status) {
               case 'in_fridge':
                 setShowScanActionModal(true);
                 break;
-              case 'out_fridge':
-                // Check 24h exceeded first
-                if (existingPaste.fridge_out_datetime) {
-                  const elapsed = new Date().getTime() - new Date(existingPaste.fridge_out_datetime).getTime();
-                  const hoursElapsed = elapsed / (60 * 60 * 1000);
-                  setAmbientacionHours(hoursElapsed);
-                  setShowAmbientacionModal(true);
-                  return;
-                }
-                if (canStartMixing(existingPaste.fridge_out_datetime)) {
-                  setShowScanActionModal(true);
-                } else {
-                  setShowWaitTimeModal(true);
-                }
+              case 'out_fridge': {
+                // Always show ambientacion modal for out_fridge pastes (allows return-to-fridge at any time)
+                const elapsed2 = existingPaste.fridge_out_datetime
+                  ? (new Date().getTime() - new Date(existingPaste.fridge_out_datetime).getTime()) / (60 * 60 * 1000)
+                  : 0;
+                setAmbientacionHours(elapsed2);
+                setShowAmbientacionModal(true);
                 break;
+              }
               case 'mixing':
                 setShowViscosityModal(true);
                 break;
@@ -269,7 +257,7 @@ export default function FridgeInTab({ smtLocation }) {
   // Create new paste
   const handleCreatePaste = async (did, manufactureDate = null) => {
     if (!parsedQRData) return;
-    
+
     // Require authentication
     requireAuth(async (user) => {
       setIsProcessing(true);
@@ -291,11 +279,11 @@ export default function FridgeInTab({ smtLocation }) {
         if (!response.ok) {
           const errData = await response.json();
           console.log('[DEBUG] POST /pastes error response:', errData);
-          
+
           // Check if this is an expired paste requiring deviation
           const requiresDeviation = errData?.data?.requiresDeviation;
           const pasteData = errData?.data?.pasteData;
-          
+
           if (requiresDeviation && pasteData) {
             console.log('[DEBUG] ✓ PASTA VENCIDA - SHOWING DEVIATION MODAL');
             setShowNewPasteModal(false);
@@ -311,7 +299,7 @@ export default function FridgeInTab({ smtLocation }) {
             console.log('[DEBUG] DeviationModal showing with pasteData:', pasteData);
             return;
           }
-          
+
           throw new Error(errData.error || 'Error al crear la pasta');
         }
 
@@ -356,11 +344,11 @@ export default function FridgeInTab({ smtLocation }) {
         if (!response.ok) {
           const errData = await response.json();
           console.log('[DEBUG] Manual entry error response:', errData);
-          
+
           // Check if pasta is expired and requires deviation
           const requiresDeviation = errData?.data?.requiresDeviation;
           const pasteData = errData?.data?.pasteData;
-          
+
           if (requiresDeviation && pasteData) {
             console.log('[DEBUG] ✓ PASTA VENCIDA (Manual) - SHOWING DEVIATION MODAL');
             setShowManualEntryModal(false);
@@ -375,7 +363,7 @@ export default function FridgeInTab({ smtLocation }) {
             console.log('[DEBUG] DeviationModal showing with pasteData:', pasteData);
             return;
           }
-          
+
           throw new Error(errData.error || 'Error al crear la pasta');
         }
 
@@ -400,7 +388,7 @@ export default function FridgeInTab({ smtLocation }) {
   // Scan action (advance status)
   const handleScanAction = async () => {
     if (!selectedPaste) return;
-    
+
     // Require authentication
     requireAuth(async (user) => {
       setIsProcessing(true);
@@ -417,7 +405,7 @@ export default function FridgeInTab({ smtLocation }) {
         const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             scan_type: scanType,
             user_name: user.nombre,
           }),
@@ -469,7 +457,7 @@ export default function FridgeInTab({ smtLocation }) {
   // Submit viscosity
   const handleViscositySubmit = async (value) => {
     if (!selectedPaste) return;
-    
+
     // Require authentication
     requireAuth(async (user) => {
       setIsProcessing(true);
@@ -477,8 +465,8 @@ export default function FridgeInTab({ smtLocation }) {
         const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            scan_type: 'viscosity_check', 
+          body: JSON.stringify({
+            scan_type: 'viscosity_check',
             viscosity_value: value,
             user_name: user.nombre,
           }),
@@ -530,7 +518,7 @@ export default function FridgeInTab({ smtLocation }) {
   // Open paste
   const handleOpenPaste = async (selectedSmtLocation) => {
     if (!selectedPaste) return;
-    
+
     // Require authentication
     requireAuth(async (user) => {
       setIsProcessing(true);
@@ -538,8 +526,8 @@ export default function FridgeInTab({ smtLocation }) {
         const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            scan_type: 'opened', 
+          body: JSON.stringify({
+            scan_type: 'opened',
             smt_location: selectedSmtLocation,
             user_name: user.nombre,
           }),
@@ -591,7 +579,7 @@ export default function FridgeInTab({ smtLocation }) {
   // Complete/remove paste
   const handleCompletePaste = async () => {
     if (!selectedPaste) return;
-    
+
     // Require authentication
     requireAuth(async (user) => {
       setIsProcessing(true);
@@ -599,7 +587,7 @@ export default function FridgeInTab({ smtLocation }) {
         const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             scan_type: 'removed',
             user_name: user.nombre,
           }),
@@ -648,7 +636,7 @@ export default function FridgeInTab({ smtLocation }) {
   // Handle table row actions
   const handleTableAction = async (paste, action) => {
     setSelectedPaste(paste);
-    
+
     switch (action) {
       case 'view':
         setShowDetailsModal(true);
@@ -663,17 +651,13 @@ export default function FridgeInTab({ smtLocation }) {
           setSelectedPaste(null);
           return;
         }
-        // Check 24h exceeded for out_fridge
-        if (paste.status === 'out_fridge' && paste.fridge_out_datetime) {
-          const elapsed = new Date().getTime() - new Date(paste.fridge_out_datetime).getTime();
-          if (elapsed >= 24 * 60 * 60 * 1000) {
-            setAmbientacionHours(Math.floor(elapsed / (60 * 60 * 1000)));
-            setShowAmbientacionModal(true);
-            return;
-          }
-        }
-        if (paste.status === 'out_fridge' && !canStartMixing(paste.fridge_out_datetime)) {
-          setShowWaitTimeModal(true);
+        // For out_fridge pastes, always show ambientacion modal (supports return-to-fridge at any time)
+        if (paste.status === 'out_fridge') {
+          const elapsedMs = paste.fridge_out_datetime
+            ? new Date().getTime() - new Date(paste.fridge_out_datetime).getTime()
+            : 0;
+          setAmbientacionHours(elapsedMs / (60 * 60 * 1000));
+          setShowAmbientacionModal(true);
         } else if (paste.status === 'mixing' || paste.status === 'rejected') {
           setShowViscosityModal(true);
         } else if (paste.status === 'viscosity_ok') {
@@ -707,7 +691,7 @@ export default function FridgeInTab({ smtLocation }) {
     setParsedQRData(null);
     // Refresh paste data and retry pending action
     await fetchPastes();
-    
+
     if (pendingDeviationAction) {
       const action = pendingDeviationAction;
       setPendingDeviationAction(null);
@@ -740,6 +724,14 @@ export default function FridgeInTab({ smtLocation }) {
     setSelectedPaste(null);
     setAmbientacionHours(0);
     await fetchPastes();
+  };
+
+  // Handle continue to mixing from ambientacion modal
+  const handleContinueToMixing = () => {
+    setShowAmbientacionModal(false);
+    setAmbientacionHours(0);
+    // Show the scan action modal for the mixing step
+    setShowScanActionModal(true);
   };
 
   return (
@@ -803,7 +795,7 @@ export default function FridgeInTab({ smtLocation }) {
             Actualizar
           </button>
         </div>
-        
+
         <PasteTableWithTabs
           pastes={pastes}
           isLoading={isLoading}
@@ -937,6 +929,7 @@ export default function FridgeInTab({ smtLocation }) {
         }}
         onRetired={handleAmbientacionRetired}
         onReturnedToFridge={handleReturnedToFridge}
+        onContinueToMixing={handleContinueToMixing}
         paste={selectedPaste}
         hoursElapsed={ambientacionHours}
       />
