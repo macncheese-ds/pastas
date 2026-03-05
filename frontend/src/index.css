@@ -87,14 +87,11 @@ button {
 
 /* Brand */
 .sidebar-brand {
-  height: var(--header-h);
+  min-height: var(--header-h);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 10px 16px;
   gap: 10px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: .5px;
   border-bottom: 1px solid rgba(255, 255, 255, .1);
   white-space: nowrap;
   overflow: hidden;
@@ -114,6 +111,30 @@ button {
 .sidebar.collapsed .brand-text {
   opacity: 0;
   transition: opacity .12s;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand-title {
+  font-size: .85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-subtitle {
+  font-size: .62rem;
+  font-weight: 400;
+  opacity: .55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Collapse button (inline nav-link) */
