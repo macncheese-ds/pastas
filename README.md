@@ -5,20 +5,24 @@ An SMT solder paste traceability system designed to track and manage solder past
 ---
 
 ## Table of Contents
-- [Overview](#overview)
+- [Quick Start](#quick-start)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Quick Start](#quick-start)
 - [Installation](#installation)
 - [Environment Configuration](#environment-configuration)
 - [Running the Application](#running-the-application)
+- [Project Structure](#project-structure)
 - [API Endpoints](#api-endpoints)
 - [Database](#database)
 - [Material Properties](#material-properties)
-- [Demo](#demo)
 - [Development](#development)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Demo
+
+![Inventory Management Demo](docs/demos/inventory-management.gif)
 
 ---
 
@@ -324,22 +328,6 @@ Database backup available in `Dump_15012026.sql`.
 - Wetting Performance
 - Temperature Profile Compliance
 - Printability Index
-
----
-
-## Demo
-
-### Inventory Management
-![Inventory Demo](docs/demos/inventory-management.gif)
-
-### Batch Tracking
-![Batch Tracking](docs/demos/batch-tracking.gif)
-
-### Quality Control
-![Quality Control](docs/demos/quality-control.gif)
-
-### Usage Logging
-![Usage Logging](docs/demos/usage-logging.gif)
 
 ---
 
