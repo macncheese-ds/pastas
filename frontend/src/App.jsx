@@ -127,7 +127,10 @@ export default function App() {
         {/* Brand */}
         <div className="sidebar-brand">
           <CpuChipIcon className="brand-icon" style={{ color: '#60a5fa' }} />
-          <span className="brand-text">Solder Paste</span>
+          <span className="brand-text">
+            <span className="brand-title">HKL Solder Paste Management System</span>
+            <span className="brand-subtitle">Sistema de Trazabilidad de Pastas de Soldadura</span>
+          </span>
         </div>
 
         {/* Navigation */}
