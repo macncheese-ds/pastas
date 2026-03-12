@@ -14,8 +14,10 @@ import {
   CheckCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { useLanguage } from '../../i18n';
 
 export default function PartNumbersConfig() {
+  const { t } = useLanguage();
   const [partNumbers, setPartNumbers] = useState([]);
   const [productionLines, setProductionLines] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -117,11 +119,11 @@ export default function PartNumbersConfig() {
 
         if (!response.ok) {
           const errData = await response.json();
-          throw new Error(errData.error || 'Error al actualizar número de parte');
+          throw new Error(errData.error || t('partConfig.messages.updateError'));
         }
 
         setShowModal(false);
-        showSuccess('Número de parte actualizado');
+        showSuccess(t('partConfig.messages.partNumberUpdated'));
       } else {
         // Add new part number
         const response = await fetch('/api/part-lines/part-numbers', {
@@ -136,11 +138,11 @@ export default function PartNumbersConfig() {
 
         if (!response.ok) {
           const errData = await response.json();
-          throw new Error(errData.error || 'Error al agregar número de parte');
+          throw new Error(errData.error || t('partConfig.messages.addError'));
         }
 
         setShowModal(false);
-        showSuccess('Número de parte agregado');
+        showSuccess(t('partConfig.messages.partNumberAdded'));
       }
 
       setNewPartNumber('');
@@ -156,7 +158,7 @@ export default function PartNumbersConfig() {
 
   // Delete part number
   const handleDeletePartNumber = async (id) => {
-    if (!confirm('¿Eliminar este número de parte?')) return;
+    if (!confirm(t('partConfig.deleteConfirm'))) return;
 
     try {
       const response = await fetch(`/api/part-lines/part-numbers/${id}`, {
@@ -165,10 +167,10 @@ export default function PartNumbersConfig() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || 'Error al eliminar');
+        throw new Error(errData.error || t('partConfig.messages.deleteError'));
       }
 
-      showSuccess('Número de parte eliminado');
+      showSuccess(t('partConfig.messages.partNumberDeleted'));
       fetchData();
     } catch (err) {
       setError(err.message);
@@ -188,10 +190,10 @@ export default function PartNumbersConfig() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || 'Error al agregar línea');
+        throw new Error(errData.error || t('partConfig.messages.addError'));
       }
 
-      showSuccess('Línea de producción agregada');
+      showSuccess(t('partConfig.messages.lineAdded'));
       fetchData();
     } catch (err) {
       setError(err.message);
@@ -200,7 +202,7 @@ export default function PartNumbersConfig() {
 
   // Delete production line
   const handleDeleteLine = async (id) => {
-    if (!confirm('¿Eliminar esta línea de producción?')) return;
+    if (!confirm(t('partConfig.deleteLineConfirm'))) return;
 
     try {
       const response = await fetch(`/api/part-lines/production-lines/${id}`, {
@@ -209,10 +211,10 @@ export default function PartNumbersConfig() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || 'Error al eliminar');
+        throw new Error(errData.error || t('partConfig.messages.deleteError'));
       }
 
-      showSuccess('Línea de producción eliminada');
+      showSuccess(t('partConfig.messages.lineDeleted'));
       fetchData();
     } catch (err) {
       setError(err.message);
@@ -236,12 +238,12 @@ export default function PartNumbersConfig() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || 'Error al crear asignación');
+        throw new Error(errData.error || t('partConfig.messages.assignmentError'));
       }
 
       setSelectedPartNumber('');
       setSelectedLine('');
-      showSuccess('Asignación creada');
+      showSuccess(t('partConfig.messages.assignmentCreated'));
       fetchData();
     } catch (err) {
       setError(err.message);
@@ -250,7 +252,7 @@ export default function PartNumbersConfig() {
 
   // Delete assignment
   const handleDeleteAssignment = async (id) => {
-    if (!confirm('¿Eliminar esta asignación?')) return;
+    if (!confirm(t('partConfig.deleteAssignmentConfirm'))) return;
 
     try {
       const response = await fetch(`/api/part-lines/assignments/${id}`, {
@@ -259,10 +261,10 @@ export default function PartNumbersConfig() {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.error || 'Error al eliminar');
+        throw new Error(errData.error || t('partConfig.messages.deleteError'));
       }
 
-      showSuccess('Asignación eliminada');
+      showSuccess(t('partConfig.messages.assignmentDeleted'));
       fetchData();
     } catch (err) {
       setError(err.message);
@@ -296,15 +298,15 @@ export default function PartNumbersConfig() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">Números de Parte y Líneas</h2>
-          <p className="text-sm text-neutral-400 mt-1">Configure qué números de parte pueden usarse en cada línea de producción</p>
+          <h2 className="text-lg font-semibold text-white">{t('partConfig.title')}</h2>
+          <p className="text-sm text-blue-400 mt-1">{t('partConfig.subtitle')}</p>
         </div>
         <button
           onClick={handleOpenAddModal}
           className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
-          Agregar Número de Parte
+          {t('partConfig.addPartNumber')}
         </button>
       </div>
 
@@ -331,14 +333,14 @@ export default function PartNumbersConfig() {
       {/* Modal for Adding/Editing Part Number */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 rounded-lg p-6 w-full max-w-md border border-neutral-700">
+          <div className="bg-blue-900 rounded-lg p-6 w-full max-w-md border border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-white">
-                {isEditMode ? 'Editar Número de Parte' : 'Agregar Número de Parte'}
+                {isEditMode ? t('partConfig.editPartNumber') : t('partConfig.addPartNumber')}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-neutral-400 hover:text-white"
+                className="text-blue-400 hover:text-white"
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>
@@ -346,40 +348,40 @@ export default function PartNumbersConfig() {
 
             <form onSubmit={handleAddPartNumberSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-1">Número de Parte *</label>
+                <label className="block text-sm font-medium text-white mb-1">{t('partConfig.partNumber')} *</label>
                 <input
                   type="text"
                   value={newPartNumber}
                   onChange={(e) => setNewPartNumber(e.target.value)}
-                  placeholder="Ej: K01.005-00M-2"
-                  className="w-full rounded-lg border border-neutral-600 bg-neutral-800 px-3 py-2 text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Ex: K01.005-00M-2"
+                  className="w-full rounded-lg border border-blue-700 bg-blue-900 px-3 py-2 text-white placeholder-blue-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">Descripción (opcional)</label>
+                <label className="block text-sm font-medium text-white mb-1">{t('partConfig.descriptionOptional')}</label>
                 <input
                   type="text"
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Descripción del número de parte"
-                  className="w-full rounded-lg border border-neutral-600 bg-neutral-800 px-3 py-2 text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Description of the part number"
+                  className="w-full rounded-lg border border-blue-700 bg-blue-900 px-3 py-2 text-white placeholder-blue-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Líneas Autorizadas *</label>
+                <label className="block text-sm font-medium text-white mb-2">{t('partConfig.authorizedLines')} *</label>
                 <div className="grid grid-cols-2 gap-2">
                   {productionLines.map(line => (
-                    <label key={line.id} className="flex items-center p-3 border border-neutral-600 rounded-lg hover:border-neutral-500 cursor-pointer">
+                    <label key={line.id} className="flex items-center p-3 border border-blue-700 rounded-lg hover:border-blue-500 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedLines.includes(line.id)}
                         onChange={() => toggleLineSelection(line.id)}
-                        className="w-4 h-4 rounded border-neutral-600 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 rounded border-blue-700 text-blue-600 focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-white">{line.line_name}</span>
-                      <span className="ml-auto text-xs text-neutral-400">{line.smt_code || 'SMT'}</span>
+                      <span className="ml-auto text-xs text-blue-400">{line.smt_code || 'SMT'}</span>
                     </label>
                   ))}
                 </div>
@@ -389,16 +391,16 @@ export default function PartNumbersConfig() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-neutral-300 bg-neutral-700 rounded-lg hover:bg-neutral-600 transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium text-blue-300 bg-blue-800 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Cancelar
+                  {t('partConfig.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={!newPartNumber.trim() || selectedLines.length === 0}
                   className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Guardar
+                  {t('partConfig.save')}
                 </button>
               </div>
             </form>
@@ -407,22 +409,22 @@ export default function PartNumbersConfig() {
       )}
 
       {/* Part Numbers Table */}
-      <div className="bg-neutral-800 rounded-lg border border-neutral-700 overflow-hidden">
+      <div className="bg-blue-900 rounded-lg border border-blue-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-neutral-900 border-b border-neutral-700">
-                <th className="text-left py-3 px-4 text-sm font-medium text-neutral-400">NÚMERO DE PARTE</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-neutral-400">DESCRIPCIÓN</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-neutral-400">LÍNEAS AUTORIZADAS</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-neutral-400">ACCIONES</th>
+              <tr className="bg-blue-950 border-b border-blue-800">
+                <th className="text-left py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.partNumber')}</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.description')}</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.authorizedLines')}</th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {partNumbers.map((pn) => (
-                <tr key={pn.id} className="border-b border-neutral-700 hover:bg-neutral-700/30 transition-colors">
+                <tr key={pn.id} className="border-b border-blue-800 hover:bg-blue-800/30 transition-colors">
                   <td className="py-3 px-4 text-white font-medium">{pn.part_number}</td>
-                  <td className="py-3 px-4 text-neutral-300">{pn.description || '-'}</td>
+                  <td className="py-3 px-4 text-blue-300">{pn.description || '-'}</td>
                   <td className="py-3 px-4">
                     <div className="flex flex-wrap gap-1">
                       {getAuthorizedLines(pn.id).length > 0 ? (
@@ -432,7 +434,7 @@ export default function PartNumbersConfig() {
                           </span>
                         ))
                       ) : (
-                        <span className="text-neutral-500 text-sm">Sin líneas asignadas</span>
+                        <span className="text-blue-500 text-sm">{t('partConfig.noAssignedLines')}</span>
                       )}
                     </div>
                   </td>
@@ -456,8 +458,8 @@ export default function PartNumbersConfig() {
               ))}
               {partNumbers.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-neutral-400">
-                    No hay números de parte configurados
+                  <td colSpan={4} className="py-8 text-center text-blue-400">
+                    {t('partConfig.noPartNumbers')}
                   </td>
                 </tr>
               )}
@@ -468,16 +470,16 @@ export default function PartNumbersConfig() {
 
       {/* Production Lines */}
       <div>
-        <h3 className="text-lg font-semibold text-white mb-3">Líneas de Producción</h3>
+        <h3 className="text-lg font-semibold text-white mb-3">{t('partConfig.productionLines')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {productionLines.map(line => {
             const partCount = assignments.filter(a => a.line_id === line.id).length;
             return (
-              <div key={line.id} className="bg-neutral-800 rounded-lg p-4 border border-neutral-700">
+              <div key={line.id} className="bg-blue-900 rounded-lg p-4 border border-blue-800">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h4 className="text-white font-semibold">{line.line_name}</h4>
-                    <p className="text-xs text-neutral-400 mt-1">{line.smt_code || 'SMT'}</p>
+                    <p className="text-xs text-blue-400 mt-1">{line.smt_code || 'SMT'}</p>
                   </div>
                   <button
                     onClick={() => handleDeleteLine(line.id)}
@@ -486,23 +488,23 @@ export default function PartNumbersConfig() {
                     <TrashIcon className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="text-sm text-neutral-300 mt-3">
-                  <span className="text-neutral-400">{partCount}</span> parte(s) asignada(s)
+                  <p className="text-sm text-blue-300 mt-3">
+                  <span className="text-neutral-400">{partCount}</span> {t('partConfig.partsAssigned')}
                 </p>
               </div>
             );
           })}
           <button
             onClick={() => {
-              const name = prompt('Nombre de la nueva línea (ej: SMT-1):');
+              const name = prompt(t('partConfig.prompt.newLineName'));
               if (name && name.trim()) {
                 handleAddLine(name);
               }
             }}
-            className="flex items-center justify-center bg-neutral-800 border-2 border-dashed border-neutral-600 rounded-lg p-4 hover:border-blue-500 hover:bg-neutral-700/50 transition-colors cursor-pointer"
+            className="flex items-center justify-center bg-blue-900 border-2 border-dashed border-blue-700 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-800/50 transition-colors cursor-pointer"
           >
             <PlusIcon className="h-5 w-5 text-neutral-400 mr-2" />
-            <span className="text-neutral-400">Agregar Línea</span>
+            <span className="text-neutral-400">{t('partConfig.addLine')}</span>
           </button>
         </div>
       </div>

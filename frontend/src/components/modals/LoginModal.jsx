@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Modal from '../ui/Modal';
+import { useLanguage } from '../../i18n';
 import { 
   UserCircleIcon, 
   LockClosedIcon,
@@ -7,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function LoginModal({ visible, defaultEmployee = '', onClose, onConfirm, busy }) {
+  const { t } = useLanguage();
   const [employeeInput, setEmployeeInput] = useState(defaultEmployee);
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState(null);
@@ -32,18 +34,18 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
     setStatus(null);
     
     if (!employeeInput.trim()) {
-      setStatus('Ingrese su número de empleado');
+      setStatus(t('login.enterEmployee'));
       return;
     }
     if (!password) {
-      setStatus('Ingrese su contraseña');
+      setStatus(t('login.enterPassword'));
       return;
     }
 
     try {
       await onConfirm({ employee_input: employeeInput.trim(), password });
     } catch (err) {
-      const msg = err && err.message ? err.message : 'Error autenticando';
+      const msg = err && err.message ? err.message : t('errors.generic');
       setStatus(msg);
     }
   };
@@ -52,21 +54,21 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
     <Modal 
       isOpen={visible} 
       onClose={onClose} 
-      title="Iniciar Sesión" 
+      title={t('login.title')} 
       size="md"
       showCloseButton={!busy}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="rounded-lg bg-blue-900/30 p-4 border border-blue-800">
           <p className="text-sm text-blue-300">
-            Ingrese sus credenciales para continuar con esta acción
+            {t('login.hint')}
           </p>
         </div>
 
         <div>
           <label htmlFor="employee" className="flex items-center text-sm font-medium text-neutral-300 mb-2">
             <UserCircleIcon className="h-5 w-5 mr-2" />
-            Número de Empleado
+            {t('login.employeeNumber')}
           </label>
           <input
             ref={employeeInputRef}
@@ -84,7 +86,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
         <div>
           <label htmlFor="password" className="flex items-center text-sm font-medium text-neutral-300 mb-2">
             <LockClosedIcon className="h-5 w-5 mr-2" />
-            Contraseña
+            {t('login.password')}
           </label>
           <input
             type="password"
@@ -113,7 +115,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
             disabled={busy}
             className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-neutral-800"
           >
-            {busy ? 'Verificando...' : 'Iniciar Sesión'}
+            {busy ? t('login.verifying') : t('login.submit')}
           </button>
           <button 
             type="button" 
@@ -121,7 +123,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
             disabled={busy}
             className="px-4 py-2.5 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 focus:ring-offset-neutral-800"
           >
-            Cancelar
+            {t('modal.cancel')}
           </button>
         </div>
       </form>

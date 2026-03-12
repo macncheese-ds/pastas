@@ -10,6 +10,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Modal from '../ui/Modal';
+import { useLanguage } from '../../i18n';
 import {
   ClockIcon,
   UserCircleIcon,
@@ -27,6 +28,7 @@ export default function AmbientacionExceededModal({
   paste,
   hoursElapsed = 0,
 }) {
+  const { t } = useLanguage();
   const [employeeInput, setEmployeeInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -68,7 +70,7 @@ export default function AmbientacionExceededModal({
     setError(null);
 
     if (!action) {
-      setError('Seleccione una acción');
+      setError(t('errors.generic'));
       return;
     }
 
@@ -81,11 +83,11 @@ export default function AmbientacionExceededModal({
     }
 
     if (!employeeInput.trim()) {
-      setError('Ingrese su número de empleado para confirmar');
+      setError(t('login.enterEmployee'));
       return;
     }
     if (action === 'retire' && !password) {
-      setError('Ingrese su contraseña');
+      setError(t('login.enterPassword'));
       return;
     }
 
@@ -116,7 +118,7 @@ export default function AmbientacionExceededModal({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || `Error al ${action === 'return' ? 'devolver' : 'retirar'} la pasta`);
+        throw new Error(data.error || t('errors.generic'));
       }
 
       if (data.success) {
@@ -142,8 +144,8 @@ export default function AmbientacionExceededModal({
         iconClass: 'text-red-400',
         titleClass: 'text-red-300',
         textClass: 'text-red-200',
-        title: 'Tiempo de Ambientación Excedido',
-        subtitle: 'Esta pasta debe ser retirada y no puede continuar en el proceso.',
+        title: t('ambientacion.exceeded'),
+        subtitle: t('ambientacion.exceededDesc'),
       };
     }
     if (canContinue) {
@@ -153,8 +155,8 @@ export default function AmbientacionExceededModal({
         iconClass: 'text-blue-400',
         titleClass: 'text-blue-300',
         textClass: 'text-blue-200',
-        title: 'Ambientación Lista',
-        subtitle: 'Puede continuar al mezclado, devolver a refrigeración, o retirar la pasta.',
+        title: t('ambientacion.ready'),
+        subtitle: t('ambientacion.readyDesc'),
       };
     }
     // isWaiting (< 4h)
@@ -164,15 +166,15 @@ export default function AmbientacionExceededModal({
       iconClass: 'text-yellow-400',
       titleClass: 'text-yellow-300',
       textClass: 'text-yellow-200',
-      title: 'Ambientación en Curso',
-      subtitle: `Faltan ${getWaitTimeText()} para completar las 4 horas de ambientación. Puede devolver a refrigeración si lo necesita.`,
+        title: t('ambientacion.inProgress'),
+        subtitle: t('ambientacion.inProgressDesc', { time: getWaitTimeText() }),
     };
   };
 
   const banner = getBannerConfig();
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Ambientación" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('ambientacion.title')} size="lg">
       <div className="space-y-5">
         {/* Warning Banner */}
         <div className={`rounded-lg ${banner.bgClass} border-2 ${banner.borderClass} p-4`}>
@@ -183,8 +185,8 @@ export default function AmbientacionExceededModal({
                 {banner.title}
               </h3>
               <p className={`mt-2 text-sm ${banner.textClass}`}>
-                Esta pasta lleva <strong>{hoursElapsed.toFixed(1)} horas</strong> en ambientación.
-                {!mustRetire && ' El tiempo máximo permitido es de 24 horas.'}
+                {t('ambientacion.hoursInAmbient', { hours: hoursElapsed.toFixed(1) })}
+                {!mustRetire && t('ambientacion.maxTime')}
               </p>
               <p className={`mt-2 text-sm ${banner.titleClass} font-semibold`}>
                 {banner.subtitle}
@@ -197,19 +199,19 @@ export default function AmbientacionExceededModal({
         <div className="rounded-lg border border-neutral-700 p-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <span className="text-neutral-400">DID:</span>
+              <span className="text-neutral-400">{t('pasteDetails.did')}</span>
               <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
             </div>
             <div>
-              <span className="text-neutral-400">Lote:</span>
+              <span className="text-neutral-400">{t('pasteDetails.lot')}</span>
               <span className="ml-2 font-medium text-white">{paste.lot_number}-{paste.lot_serial}</span>
             </div>
             <div>
-              <span className="text-neutral-400">Parte:</span>
+              <span className="text-neutral-400">{t('pasteDetails.partNumber')}</span>
               <span className="ml-2 font-medium text-white">{paste.part_number}</span>
             </div>
             <div>
-              <span className="text-neutral-400">Salió de heladera:</span>
+              <span className="text-neutral-400">{t('ambientacion.leftFridge')}</span>
               <span className="ml-2 font-medium text-orange-400">
                 {paste.fridge_out_datetime
                   ? new Date(paste.fridge_out_datetime).toLocaleString('es-MX')
@@ -221,7 +223,7 @@ export default function AmbientacionExceededModal({
 
         {/* Action Selection */}
         <div className="rounded-lg border border-neutral-700 p-4 space-y-3">
-          <p className="text-sm font-medium text-neutral-300 mb-3">Seleccione la acción a realizar:</p>
+          <p className="text-sm font-medium text-neutral-300 mb-3">{t('ambientacion.selectAction')}</p>
 
           {/* Continue to mixing option (only when 4h-24h) */}
           {canContinue && (
@@ -233,8 +235,8 @@ export default function AmbientacionExceededModal({
                 }`}
             >
               <div className="flex-1">
-                <h4 className="text-sm font-semibold text-blue-400">Continuar al Mezclado</h4>
-                <p className="text-xs text-neutral-400 mt-1">La pasta continuará al proceso de mezclado</p>
+                <h4 className="text-sm font-semibold text-blue-400">{t('ambientacion.continueToMix')}</h4>
+                <p className="text-xs text-neutral-400 mt-1">{t('ambientacion.continueToMixDesc')}</p>
               </div>
               <div className={`flex-shrink-0 h-5 w-5 rounded-full border-2 ${action === 'continue' ? 'border-blue-500 bg-blue-500' : 'border-neutral-500'}`} />
             </div>
@@ -250,8 +252,8 @@ export default function AmbientacionExceededModal({
                 }`}
             >
               <div className="flex-1">
-                <h4 className="text-sm font-semibold text-green-400">Devolver a Refrigeración</h4>
-                <p className="text-xs text-neutral-400 mt-1">La pasta regresará a almacenamiento refrigerado y puede continuar después</p>
+                <h4 className="text-sm font-semibold text-green-400">{t('ambientacion.returnToFridge')}</h4>
+                <p className="text-xs text-neutral-400 mt-1">{t('ambientacion.returnToFridgeDesc')}</p>
               </div>
               <div className={`flex-shrink-0 h-5 w-5 rounded-full border-2 ${action === 'return' ? 'border-green-500 bg-green-500' : 'border-neutral-500'}`} />
             </div>
@@ -266,8 +268,8 @@ export default function AmbientacionExceededModal({
               }`}
           >
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-red-400">Retirar Pasta</h4>
-              <p className="text-xs text-neutral-400 mt-1">La pasta será marcada como retirada y no puede continuar en el proceso {mustRetire && '(24h+ excedidas)'}</p>
+                <h4 className="text-sm font-semibold text-red-400">{t('ambientacion.retirePaste')}</h4>
+                <p className="text-xs text-neutral-400 mt-1">{t('ambientacion.retirePasteDesc')} {mustRetire && '(24h+)'}</p>
             </div>
             <div className={`flex-shrink-0 h-5 w-5 rounded-full border-2 ${action === 'retire' ? 'border-red-500 bg-red-500' : 'border-neutral-500'}`} />
           </div>
@@ -279,21 +281,12 @@ export default function AmbientacionExceededModal({
             <div className="flex items-start">
               <ExclamationTriangleIcon className="h-5 w-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="ml-2">
-                <p className="text-xs text-amber-300 font-medium">CONFIRMACIÓN REQUERIDA</p>
+                <p className="text-xs text-amber-300 font-medium">{t('ambientacion.confirmRequired')}</p>
                 <ul className="mt-1 text-xs text-amber-200 space-y-0.5 list-disc list-inside">
                   {action === 'return' ? (
-                    <>
-                      <li>La pasta volverá a refrigeración donde puede ser procesada posterior</li>
-                      <li>Se registrará que devolvió la pasta a refrigeración</li>
-                      <li>Puede reanudar el proceso de esta pasta después</li>
-                    </>
+                    t('ambientacion.returnNotes').map((note, i) => <li key={i}>{note}</li>)
                   ) : (
-                    <>
-                      <li>Ingrese sus credenciales para confirmar que está informado</li>
-                      <li>La pasta será marcada como retirada</li>
-                      <li>Se registrará quién realizó el retiro y la fecha/hora</li>
-                      <li>Esta acción no puede deshacerse</li>
-                    </>
+                    t('ambientacion.retireNotes').map((note, i) => <li key={i}>{note}</li>)
                   )}
                 </ul>
               </div>
@@ -308,7 +301,7 @@ export default function AmbientacionExceededModal({
               <div>
                 <label className="flex items-center text-sm font-medium text-neutral-300 mb-1.5">
                   <UserCircleIcon className="h-4 w-4 mr-1.5" />
-                  Número de Empleado
+                  {t('login.employeeNumber')}
                 </label>
                 <input
                   ref={employeeRef}
@@ -325,7 +318,7 @@ export default function AmbientacionExceededModal({
                 <div>
                   <label className="flex items-center text-sm font-medium text-neutral-300 mb-1.5">
                     <LockClosedIcon className="h-4 w-4 mr-1.5" />
-                    Contraseña
+                    {t('login.password')}
                   </label>
                   <input
                     type="password"
@@ -353,7 +346,7 @@ export default function AmbientacionExceededModal({
               disabled={busy}
               className="flex-1 px-4 py-2.5 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 font-medium rounded-lg transition-colors disabled:opacity-50"
             >
-              Cancelar
+              {t('modal.cancel')}
             </button>
             <button
               type="submit"
@@ -371,17 +364,17 @@ export default function AmbientacionExceededModal({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Procesando...
+                  {t('modal.processing')}
                 </>
               ) : action === 'continue' ? (
                 <>
                   <PlayIcon className="h-4 w-4 mr-1.5" />
-                  Continuar al Mezclado
+                  {t('ambientacion.continueToMix')}
                 </>
               ) : action === 'return' ? (
-                <>Devolver a Refrigeración</>
+                <>{t('ambientacion.returnToFridge')}</>
               ) : (
-                <>Confirmar y Retirar Pasta</>
+                <>{t('ambientacion.confirmAndRemove')}</>
               )}
             </button>
           </div>

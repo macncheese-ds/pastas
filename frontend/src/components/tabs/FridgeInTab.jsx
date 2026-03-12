@@ -25,6 +25,7 @@ import { parseQRCode, canStartMixing } from '../../lib/qrParser';
 import { STATUS_NEXT_ACTIONS } from '../../types';
 import { getSmtLocation } from '../../config/smtMapping';
 import { login, updatePasteDid } from '../../api';
+import { useLanguage } from '../../i18n';
 import {
   PlusIcon,
   ArrowPathIcon,
@@ -32,6 +33,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function FridgeInTab({ smtLocation }) {
+  const { t } = useLanguage();
   // Data state
   const [pastes, setPastes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +75,7 @@ export default function FridgeInTab({ smtLocation }) {
         ? `/api/pastes?smt_location=${encodeURIComponent(smtLocation)}`
         : '/api/pastes';
       const response = await fetch(url);
-      if (!response.ok) throw new Error('Error al cargar las pastas');
+      if (!response.ok) throw new Error(t('errors.loadPastes'));
       const result = await response.json();
       // Handle both wrapped and direct array responses
       setPastes(result.data || result);
@@ -149,7 +151,7 @@ export default function FridgeInTab({ smtLocation }) {
 
             // Check if paste is discarded
             if (paste.status === 'discarded') {
-              setError('Esta pasta fue descartada y no puede ser utilizada.\n\nRazón: ' + (paste.discarded_reason || 'No especificada'));
+              setError(t('errors.pastDiscarded') + '\n\n' + t('errors.discardReason') + ' ' + (paste.discarded_reason || t('errors.notSpecified')));
               return;
             }
 
@@ -168,7 +170,7 @@ export default function FridgeInTab({ smtLocation }) {
                 break;
               }
               case 'mixing':
-                setShowViscosityModal(true);
+                openViscosityModalWithAutoCheck(paste);
                 break;
               case 'viscosity_ok':
                 await fetchAuthorizedLines(paste.part_number);
@@ -178,7 +180,7 @@ export default function FridgeInTab({ smtLocation }) {
                 setShowCompletedModal(true);
                 break;
               case 'rejected':
-                setShowViscosityModal(true);
+                openViscosityModalWithAutoCheck(paste);
                 break;
               default:
                 setShowScanActionModal(true);
@@ -188,7 +190,7 @@ export default function FridgeInTab({ smtLocation }) {
         }
         // Neither QR parse nor DID lookup worked - show error
         setShowNewPasteModal(false); // Close any open modals
-        setError(parseErr.message || 'Error al procesar el código QR. Use el ingreso manual si es necesario.');
+        setError(parseErr.message || t('errors.processScan'));
         return;
       }
 
@@ -207,7 +209,7 @@ export default function FridgeInTab({ smtLocation }) {
 
             // Check if paste is discarded
             if (existingPaste.status === 'discarded') {
-              setError('Esta pasta fue descartada y no puede ser utilizada.\n\nRazón: ' + (existingPaste.discarded_reason || 'No especificada'));
+              setError(t('errors.pastDiscarded') + '\n\n' + t('errors.discardReason') + ' ' + (existingPaste.discarded_reason || t('errors.notSpecified')));
               return;
             }
 
@@ -226,7 +228,7 @@ export default function FridgeInTab({ smtLocation }) {
                 break;
               }
               case 'mixing':
-                setShowViscosityModal(true);
+                openViscosityModalWithAutoCheck(existingPaste);
                 break;
               case 'viscosity_ok':
                 await fetchAuthorizedLines(existingPaste.part_number);
@@ -236,7 +238,7 @@ export default function FridgeInTab({ smtLocation }) {
                 setShowCompletedModal(true);
                 break;
               case 'rejected':
-                setShowViscosityModal(true);
+                openViscosityModalWithAutoCheck(existingPaste);
                 break;
               default:
                 setShowScanActionModal(true);
@@ -250,7 +252,7 @@ export default function FridgeInTab({ smtLocation }) {
         setShowNewPasteModal(true);
       }
     } catch (err) {
-      setError(err.message || 'Error al procesar el escaneo');
+      setError(err.message || t('errors.processScan'));
     }
   };
 
@@ -300,7 +302,7 @@ export default function FridgeInTab({ smtLocation }) {
             return;
           }
 
-          throw new Error(errData.error || 'Error al crear la pasta');
+          throw new Error(errData.error || t('errors.createPaste'));
         }
 
         setShowNewPasteModal(false);
@@ -364,7 +366,7 @@ export default function FridgeInTab({ smtLocation }) {
             return;
           }
 
-          throw new Error(errData.error || 'Error al crear la pasta');
+          throw new Error(errData.error || t('errors.createPaste'));
         }
 
         setShowManualEntryModal(false);
@@ -399,7 +401,7 @@ export default function FridgeInTab({ smtLocation }) {
         const scanType = nextAction?.actionType || null;
 
         if (!scanType) {
-          throw new Error('Tipo de escaneo no determinado para este estado');
+          throw new Error(t('errors.scanTypeUndefined'));
         }
 
         const response = await fetch(`/api/pastes/${selectedPaste.id}/scan`, {
@@ -452,6 +454,51 @@ export default function FridgeInTab({ smtLocation }) {
         setIsProcessing(false);
       }
     });
+  };
+
+  // Check for existing viscosity in the same lot and auto-apply if found
+  const handleViscosityCheckAndApply = async (paste) => {
+    if (!paste || !paste.lot_number) return false;
+
+    try {
+      // Check if another paste in the same lot already has viscosity
+      const response = await fetch(
+        `/api/pastes?lot_number=${encodeURIComponent(paste.lot_number)}&status_in=viscosity_ok,opened,removed,completed`,
+        { method: 'GET' }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        const pastes = result.data || result;
+        
+        // Find the first paste with viscosity in this lot
+        const pasteWithViscosity = pastes.find(p => p.viscosity_value && p.id !== paste.id);
+        
+        if (pasteWithViscosity) {
+          // Auto-apply the viscosity value
+          await handleViscositySubmit(pasteWithViscosity.viscosity_value);
+          return true;
+        }
+      }
+    } catch (err) {
+      console.log('Could not check for existing viscosity:', err);
+    }
+    
+    return false;
+  };
+
+  // Open viscosity modal with auto-check
+  const openViscosityModalWithAutoCheck = async (paste) => {
+    if (!paste) return;
+    setSelectedPaste(paste);
+    
+    // Try to auto-apply viscosity
+    const autoApplied = await handleViscosityCheckAndApply(paste);
+    
+    // If not auto-applied, show the modal
+    if (!autoApplied) {
+      setShowViscosityModal(true);
+    }
   };
 
   // Submit viscosity
@@ -647,7 +694,7 @@ export default function FridgeInTab({ smtLocation }) {
       case 'scan':
         // Check if paste is discarded
         if (paste.status === 'discarded') {
-          setError('Esta pasta fue descartada y no puede ser utilizada');
+          setError(t('errors.pastDiscarded'));
           setSelectedPaste(null);
           return;
         }
@@ -659,7 +706,7 @@ export default function FridgeInTab({ smtLocation }) {
           setAmbientacionHours(elapsedMs / (60 * 60 * 1000));
           setShowAmbientacionModal(true);
         } else if (paste.status === 'mixing' || paste.status === 'rejected') {
-          setShowViscosityModal(true);
+          openViscosityModalWithAutoCheck(paste);
         } else if (paste.status === 'viscosity_ok') {
           await fetchAuthorizedLines(paste.part_number);
           setShowOpenPasteModal(true);
@@ -670,7 +717,7 @@ export default function FridgeInTab({ smtLocation }) {
         }
         break;
       case 'viscosity':
-        setShowViscosityModal(true);
+        openViscosityModalWithAutoCheck(paste);
         break;
       case 'open':
         await fetchAuthorizedLines(paste.part_number);
@@ -737,51 +784,51 @@ export default function FridgeInTab({ smtLocation }) {
   return (
     <div className="space-y-6">
       {/* Scanner Section */}
-      <div className="bg-neutral-800 rounded-lg p-6 border border-neutral-700">
+      <div className="bg-[#0f1d33] rounded-lg p-6 border border-blue-900/40">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white">Escanear Pasta</h2>
+          <h2 className="text-lg font-semibold text-white">{t('scanner.title')}</h2>
           <button
             onClick={() => setShowManualEntryModal(true)}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-neutral-300 bg-neutral-700 border border-neutral-600 rounded-md hover:bg-neutral-600 transition-colors"
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-200/70 bg-blue-950/50 border border-blue-800/40 rounded-md hover:bg-blue-900/40 transition-colors"
           >
             <PlusIcon className="h-4 w-4 mr-1.5" />
-            Ingreso Manual
+            {t('scanner.manualEntry')}
           </button>
         </div>
         <QRScannerInput onScan={handleScan} />
-        <p className="mt-2 text-xs text-neutral-500">
-          Escanee el código QR de la pasta o el DID para continuar el proceso.
+        <p className="mt-2 text-xs text-blue-300/40">
+          {t('scanner.hint')}
         </p>
       </div>
 
       {/* Error Modal */}
       {error && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-neutral-800 rounded-lg p-6 w-full max-w-sm border border-neutral-700 text-center">
+          <div className="bg-[#0f1d33] rounded-lg p-6 w-full max-w-sm border border-blue-900/40 text-center">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-red-900/40 rounded-full flex items-center justify-center">
                 <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-white mb-3">Error</h3>
-            <p className="text-sm text-neutral-300 mb-6 whitespace-pre-wrap">{error}</p>
+            <h3 className="text-lg font-semibold text-white mb-3">{t('errors.generic')}</h3>
+            <p className="text-sm text-blue-200/70 mb-6 whitespace-pre-wrap">{error}</p>
             <button
               onClick={() => setError(null)}
               className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
             >
-              Cerrar
+              {t('modal.close')}
             </button>
           </div>
         </div>
       )}
 
       {/* Pastes Table */}
-      <div className="bg-neutral-800 rounded-lg border border-neutral-700">
-        <div className="flex items-center justify-between p-4 border-b border-neutral-700">
+      <div className="bg-[#0f1d33] rounded-lg border border-blue-900/40">
+        <div className="flex items-center justify-between p-4 border-b border-blue-900/40">
           <h2 className="text-lg font-semibold text-white">
-            Pastas en Proceso
+            {t('table.title')}
             {smtLocation && (
-              <span className="ml-2 text-sm font-normal text-purple-400">
+              <span className="ml-2 text-sm font-normal text-blue-400">
                 ({smtLocation})
               </span>
             )}
@@ -789,10 +836,10 @@ export default function FridgeInTab({ smtLocation }) {
           <button
             onClick={fetchPastes}
             disabled={isLoading}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-neutral-300 bg-neutral-700 border border-neutral-600 rounded-md hover:bg-neutral-600 transition-colors disabled:opacity-50"
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-200/70 bg-blue-950/50 border border-blue-800/40 rounded-md hover:bg-blue-900/40 transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className={`h-4 w-4 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Actualizar
+            {t('table.refresh')}
           </button>
         </div>
 

@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { STATUS_LABELS, STATUS_COLORS } from '../../types';
+import { useLanguage } from '../../i18n';
 import {
   ChartBarIcon,
   ArrowPathIcon,
@@ -22,6 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function ReportsTab() {
+  const { t } = useLanguage();
   const [pastes, setPastes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState('week');
@@ -262,23 +264,23 @@ export default function ReportsTab() {
         <div className="flex items-center">
           <ChartBarIcon className="h-7 w-7 text-blue-400 mr-3" />
           <div>
-            <h2 className="text-2xl font-bold text-white">Dashboard de Reportes</h2>
-            <p className="text-sm text-neutral-400">Análisis y métricas del sistema de pastas</p>
+            <h2 className="text-2xl font-bold text-white">{t('reports.title')}</h2>
+            <p className="text-sm text-blue-400">{t('reports.subtitle')}</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-neutral-800 rounded-lg p-1 border border-neutral-700">
-            <CalendarIcon className="h-4 w-4 text-neutral-400 ml-2 mr-1" />
+          <div className="flex items-center bg-blue-900 rounded-lg p-1 border border-blue-800">
+            <CalendarIcon className="h-4 w-4 text-blue-400 ml-2 mr-1" />
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="bg-transparent text-sm text-neutral-300 border-0 focus:ring-0 pr-8 cursor-pointer"
+              className="bg-transparent text-sm text-blue-300 border-0 focus:ring-0 pr-8 cursor-pointer"
             >
-              <option value="today">Hoy</option>
-              <option value="week">Última semana</option>
-              <option value="month">Último mes</option>
-              <option value="all">Todo el historial</option>
+              <option value="today">{t('reports.today')}</option>
+              <option value="week">{t('reports.lastWeek')}</option>
+              <option value="month">{t('reports.lastMonth')}</option>
+              <option value="all">{t('reports.allHistory')}</option>
             </select>
           </div>
           
@@ -287,13 +289,13 @@ export default function ReportsTab() {
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
           >
             <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-            Exportar Excel
+            {t('reports.exportExcel') || 'Export Excel'}
           </button>
           
           <button
             onClick={fetchPastes}
             disabled={isLoading}
-            className="inline-flex items-center px-3 py-2 text-sm font-medium text-neutral-300 bg-neutral-700 border border-neutral-600 rounded-lg hover:bg-neutral-600 transition-colors disabled:opacity-50"
+            className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-300 bg-blue-800 border border-blue-700 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className={`h-4 w-4 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
             Actualizar
@@ -307,7 +309,7 @@ export default function ReportsTab() {
         <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/50 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-blue-300 uppercase tracking-wide font-medium">Total Registradas</p>
+              <p className="text-xs text-blue-300 uppercase tracking-wide font-medium">{t('reports.totalRegistered')}</p>
               <p className="text-3xl font-bold text-white mt-1">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
@@ -315,7 +317,7 @@ export default function ReportsTab() {
             </div>
           </div>
           <div className="mt-3 flex items-center text-xs text-blue-300">
-            <span>{stats.inProcess} en proceso</span>
+            <span>{stats.inProcess} {t('reports.inProcess')}</span>
           </div>
         </div>
 
@@ -323,7 +325,7 @@ export default function ReportsTab() {
         <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 border border-green-700/50 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-green-300 uppercase tracking-wide font-medium">Tasa de Éxito</p>
+              <p className="text-xs text-green-300 uppercase tracking-wide font-medium">{t('reports.successRate')}</p>
               <p className="text-3xl font-bold text-white mt-1">{stats.efficiencyRate}%</p>
             </div>
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
@@ -344,7 +346,7 @@ export default function ReportsTab() {
         <div className="bg-gradient-to-br from-red-900/40 to-red-800/20 border border-red-700/50 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-red-300 uppercase tracking-wide font-medium">Tasa de Rechazo</p>
+              <p className="text-xs text-red-300 uppercase tracking-wide font-medium">{t('reports.rejectionRate')}</p>
               <p className="text-3xl font-bold text-white mt-1">{stats.rejectionRate}%</p>
             </div>
             <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
@@ -352,7 +354,7 @@ export default function ReportsTab() {
             </div>
           </div>
           <div className="mt-3 flex items-center text-xs text-red-300">
-            <span>{stats.rejected} rechazadas</span>
+            <span>{stats.rejected} {t('reports.rejected')}</span>
           </div>
         </div>
 
@@ -360,7 +362,7 @@ export default function ReportsTab() {
         <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 border border-cyan-700/50 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-cyan-300 uppercase tracking-wide font-medium">En Refrigerador</p>
+              <p className="text-xs text-cyan-300 uppercase tracking-wide font-medium">{t('reports.inFridge')}</p>
               <p className="text-3xl font-bold text-white mt-1">{stats.inFridge}</p>
             </div>
             <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
@@ -368,7 +370,7 @@ export default function ReportsTab() {
             </div>
           </div>
           <div className="mt-3 flex items-center text-xs text-cyan-300">
-            <span>Listas para usar</span>
+            <span>{t('reports.readyToUse')}</span>
           </div>
         </div>
       </div>
@@ -378,10 +380,10 @@ export default function ReportsTab() {
         {/* Status Distribution - Left Column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status Flow */}
-          <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
+          <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <TableCellsIcon className="h-5 w-5 mr-2 text-purple-400" />
-              Flujo de Estados
+              {t('reports.statusFlow')}
             </h3>
             <div className="grid grid-cols-7 gap-2">
               {Object.entries(STATUS_LABELS).map(([status, label]) => {
@@ -393,12 +395,12 @@ export default function ReportsTab() {
                 
                 return (
                   <div key={status} className="text-center">
-                    <div className="bg-neutral-700/50 rounded-lg p-3 hover:bg-neutral-700 transition-colors">
+                    <div className="bg-blue-800/50 rounded-lg p-3 hover:bg-blue-800 transition-colors">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}>
                         {label.split(' ')[0]}
                       </span>
                       <p className="text-2xl font-bold text-white mt-2">{count}</p>
-                      <p className="text-xs text-neutral-400">{percentage}%</p>
+                      <p className="text-xs text-blue-400">{percentage}%</p>
                     </div>
                   </div>
                 );
@@ -407,10 +409,10 @@ export default function ReportsTab() {
           </div>
 
           {/* Daily Trend Chart */}
-          <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
+          <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-blue-400" />
-              Tendencia Semanal
+              {t('reports.weeklyTrend')}
             </h3>
             <div className="flex items-end justify-between h-40 gap-2">
               {dailyBreakdown.map((day, idx) => (
@@ -445,15 +447,15 @@ export default function ReportsTab() {
             <div className="flex justify-center gap-6 mt-4 text-xs">
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-blue-500/60 rounded" />
-                <span className="text-neutral-400">En proceso</span>
+                <span className="text-blue-400">{t('reports.inProcessLabel')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-green-500/60 rounded" />
-                <span className="text-neutral-400">Completadas</span>
+                <span className="text-blue-400">{t('reports.completedLabel')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-red-500/60 rounded" />
-                <span className="text-neutral-400">Rechazadas</span>
+                <span className="text-blue-400">{t('reports.rejectedLabel')}</span>
               </div>
             </div>
           </div>
@@ -462,21 +464,21 @@ export default function ReportsTab() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Time Statistics */}
-          <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
+          <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <ClockIcon className="h-5 w-5 mr-2 text-amber-400" />
-              Tiempos Promedio
+              {t('reports.avgTimes')}
             </h3>
             <div className="space-y-4">
-              <div className="bg-neutral-700/50 rounded-lg p-4">
+              <div className="bg-blue-800/50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-300">En refrigerador</span>
+                  <span className="text-sm text-blue-300">{t('reports.timeInFridge')}</span>
                   <span className="text-lg font-bold text-blue-300">{avgTimes.fridgeTime}</span>
                 </div>
               </div>
-              <div className="bg-neutral-700/50 rounded-lg p-4">
+              <div className="bg-blue-800/50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-300">Tiempo espera (4h)</span>
+                  <span className="text-sm text-blue-300">{t('reports.waitTime4h')}</span>
                   <span className={`text-lg font-bold ${avgTimes.waitTimeCompliant === false ? 'text-red-300' : avgTimes.waitTimeCompliant ? 'text-green-300' : 'text-amber-300'}`}>
                     {avgTimes.waitTime}
                   </span>
@@ -484,13 +486,13 @@ export default function ReportsTab() {
                 {avgTimes.waitTimeCompliant === false && (
                   <p className="text-xs text-red-400 mt-1 flex items-center">
                     <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
-                    Excede el tiempo recomendado
+                    {t('reports.exceedsRecommended')}
                   </p>
                 )}
               </div>
-              <div className="bg-neutral-700/50 rounded-lg p-4">
+              <div className="bg-blue-800/50 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-300">Proceso completo</span>
+                  <span className="text-sm text-blue-300">{t('reports.fullProcess')}</span>
                   <span className="text-lg font-bold text-purple-300">{avgTimes.totalProcess}</span>
                 </div>
               </div>
@@ -499,39 +501,39 @@ export default function ReportsTab() {
 
           {/* Viscosity Stats */}
           {viscosityStats && (
-            <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
+            <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                 <BeakerIcon className="h-5 w-5 mr-2 text-green-400" />
-                Viscosidad
+                {t('reports.viscosity')}
               </h3>
               <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="bg-neutral-700/50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-neutral-400">Min</p>
+                <div className="bg-blue-800/50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-neutral-400">{t('reports.min')}</p>
                   <p className="text-xl font-bold text-white">{viscosityStats.min}</p>
                 </div>
-                <div className="bg-neutral-700/50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-neutral-400">Promedio</p>
+                <div className="bg-blue-800/50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-neutral-400">{t('reports.average')}</p>
                   <p className="text-xl font-bold text-green-300">{viscosityStats.avg}</p>
                 </div>
-                <div className="bg-neutral-700/50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-neutral-400">Max</p>
+                <div className="bg-blue-800/50 rounded-lg p-3 text-center">
+                  <p className="text-xs text-blue-400">{t('reports.min')}</p>
                   <p className="text-xl font-bold text-white">{viscosityStats.max}</p>
                 </div>
               </div>
-              <div className="bg-neutral-700/50 rounded-lg p-3">
+              <div className="bg-blue-800/50 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-neutral-300">Dentro de rango (150-180)</span>
+                  <span className="text-sm text-blue-300">{t('reports.inRange')}</span>
                   <span className="text-sm font-bold text-green-300">{viscosityStats.complianceRate}%</span>
                 </div>
-                <div className="w-full bg-neutral-600 rounded-full h-2">
+                <div className="w-full bg-blue-700 rounded-full h-2">
                   <div 
                     className="bg-green-500 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${viscosityStats.complianceRate}%` }}
                   />
                 </div>
                 <div className="flex justify-between mt-1 text-xs text-neutral-400">
-                  <span>{viscosityStats.inRange} OK</span>
-                  <span>{viscosityStats.outOfRange} fuera</span>
+                  <span>{viscosityStats.inRange} {t('reports.ok')}</span>
+                  <span>{viscosityStats.outOfRange} {t('reports.outOf')}</span>
                 </div>
               </div>
             </div>
@@ -542,18 +544,18 @@ export default function ReportsTab() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* SMT Line Distribution */}
-        <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Distribución por Línea SMT</h3>
+        <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
+          <h3 className="text-lg font-semibold text-white mb-4">{t('reports.smtDistribution')}</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {Object.entries(smtDistribution)
               .sort((a, b) => b[1] - a[1])
               .map(([smt, count]) => {
                 const percentage = stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0;
                 return (
-                  <div key={smt} className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-700 transition-colors">
+                <div className="flex items-center justify-between p-3 bg-blue-700/50 rounded-lg hover:bg-blue-700 transition-colors">
                     <span className="text-sm font-medium text-white">{smt}</span>
                     <div className="flex items-center gap-3">
-                      <div className="w-24 bg-neutral-600 rounded-full h-2">
+                      <div className="w-24 bg-blue-600 rounded-full h-2">
                         <div 
                           className="bg-purple-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${percentage}%` }}
@@ -568,8 +570,8 @@ export default function ReportsTab() {
         </div>
 
         {/* Part Number Distribution */}
-        <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
-          <h3 className="text-lg font-semibold text-white mb-4">Números de Parte Más Usados</h3>
+        <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
+          <h3 className="text-lg font-semibold text-white mb-4">{t('reports.topPartNumbers')}</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {Object.entries(partNumberDistribution)
               .sort((a, b) => b[1] - a[1])
@@ -577,10 +579,10 @@ export default function ReportsTab() {
               .map(([pn, count]) => {
                 const percentage = stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0;
                 return (
-                  <div key={pn} className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-700 transition-colors">
+                <div className="flex items-center justify-between p-3 bg-blue-700/50 rounded-lg hover:bg-blue-700 transition-colors">
                     <span className="text-sm font-medium text-white font-mono">{pn}</span>
                     <div className="flex items-center gap-3">
-                      <div className="w-24 bg-neutral-600 rounded-full h-2">
+                      <div className="w-24 bg-blue-600 rounded-full h-2">
                         <div 
                           className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${percentage}%` }}
@@ -596,37 +598,37 @@ export default function ReportsTab() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-neutral-800 rounded-xl p-6 border border-neutral-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Actividad Reciente</h3>
+      <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
+        <h3 className="text-lg font-semibold text-white mb-4">{t('reports.recentActivity')}</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-neutral-700">
-                <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase">DID</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase">Lote</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase">Parte</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase">Línea</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase">Estado</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase">Viscosidad</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-neutral-400 uppercase">Entrada</th>
+              <tr className="border-b border-blue-800">
+                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.did')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.lot')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.part')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.line')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.status')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.viscosity')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.entry')}</th>
               </tr>
             </thead>
             <tbody>
               {recentActivity.map((paste) => (
-                <tr key={paste.id} className="border-b border-neutral-700/50 hover:bg-neutral-700/30 transition-colors">
+                <tr key={paste.id} className="border-b border-blue-800/50 hover:bg-blue-900/30 transition-colors">
                   <td className="py-3 px-3 text-sm text-white font-mono">{paste.did || '-'}</td>
-                  <td className="py-3 px-3 text-sm text-neutral-300">{paste.lot_number}</td>
-                  <td className="py-3 px-3 text-sm text-neutral-300 font-mono">{paste.part_number}</td>
-                  <td className="py-3 px-3 text-sm text-neutral-300">{paste.smt_location || '-'}</td>
+                  <td className="py-3 px-3 text-sm text-blue-300">{paste.lot_number}</td>
+                  <td className="py-3 px-3 text-sm text-blue-300 font-mono">{paste.part_number}</td>
+                  <td className="py-3 px-3 text-sm text-blue-300">{paste.smt_location || '-'}</td>
                   <td className="py-3 px-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[paste.status]}`}>
-                      {STATUS_LABELS[paste.status]}
+                      {t('status.' + paste.status)}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-sm text-neutral-300">
+                  <td className="py-3 px-3 text-sm text-blue-300">
                     {paste.viscosity_value || '-'}
                   </td>
-                  <td className="py-3 px-3 text-sm text-neutral-400">
+                  <td className="py-3 px-3 text-sm text-blue-400">
                     {paste.fridge_in_datetime ? new Date(paste.fridge_in_datetime).toLocaleString('es-MX', { 
                       day: '2-digit', 
                       month: '2-digit',
@@ -639,7 +641,7 @@ export default function ReportsTab() {
               {recentActivity.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-neutral-400">
-                    No hay actividad reciente
+                    {t('reports.noRecentActivity')}
                   </td>
                 </tr>
               )}

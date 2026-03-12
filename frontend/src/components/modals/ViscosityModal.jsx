@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { isValidViscosity, formatDateTime } from '../../lib/qrParser';
+import { useLanguage } from '../../i18n';
 import {
   CheckCircleIcon,
   XCircleIcon,
@@ -21,16 +22,17 @@ export default function ViscosityModal({
   paste,
   isLoading = false,
 }) {
+  const { t } = useLanguage();
   const [viscosity, setViscosity] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!isOpen) {
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
         setViscosity('');
         setError('');
       }, 0);
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -46,9 +48,9 @@ export default function ViscosityModal({
     const numValue = parseFloat(value);
     if (value && !isNaN(numValue)) {
       if (numValue < 170) {
-        setError('Valor muy bajo. Mínimo permitido: 170');
+        setError(t('viscosityModal.tooLow'));
       } else if (numValue > 230) {
-        setError('Valor muy alto. Máximo permitido: 230');
+        setError(t('viscosityModal.tooHigh'));
       }
     }
   };
@@ -57,12 +59,12 @@ export default function ViscosityModal({
     const numValue = parseFloat(viscosity);
 
     if (isNaN(numValue)) {
-      setError('Ingrese un valor numérico válido');
+      setError(t('viscosityModal.invalidNumber'));
       return;
     }
 
     if (!isValidViscosity(numValue)) {
-      setError(`Valor ${numValue} fuera de rango. Debe estar entre 170-230.`);
+      setError(t('viscosityModal.outOfRange', { value: numValue }));
       return;
     }
 
@@ -73,7 +75,7 @@ export default function ViscosityModal({
   const isValidValue = !isNaN(numericValue) && isValidViscosity(numericValue);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Registro de Viscosidad" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('viscosityModal.title')} size="lg">
       <div className="space-y-6">
         {isRejected && (
           <div className="rounded-lg bg-red-900/30 border border-red-700 p-4">
@@ -81,11 +83,10 @@ export default function ViscosityModal({
               <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-red-300">
-                  Viscosidad rechazada anteriormente
+                  {t('viscosityModal.prevRejected')}
                 </p>
                 <p className="text-sm text-red-400 mt-1">
-                  El valor anterior ({paste.viscosity_value}) estaba fuera del rango permitido.
-                  Por favor, vuelva a mezclar e ingrese un nuevo valor.
+                  {t('viscosityModal.prevRejectedDesc', { value: paste.viscosity_value })}
                 </p>
               </div>
             </div>
@@ -95,19 +96,19 @@ export default function ViscosityModal({
         <div className="rounded-lg border border-neutral-700 p-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">
-              <span className="text-neutral-400">DID:</span>
+              <span className="text-neutral-400">{t('pasteDetails.did')}</span>
               <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
             </div>
             <div>
-              <span className="text-neutral-400">Lote:</span>
+              <span className="text-neutral-400">{t('viscosityModal.lot')}</span>
               <span className="ml-2 font-medium text-white">{paste.lot_number}</span>
             </div>
             <div>
-              <span className="text-neutral-400">Serial:</span>
+              <span className="text-neutral-400">{t('viscosityModal.serial')}</span>
               <span className="ml-2 font-medium text-white">{paste.lot_serial}</span>
             </div>
             <div className="col-span-2">
-              <span className="text-neutral-400">Inicio de mezclado:</span>
+              <span className="text-neutral-400">{t('viscosityModal.mixStart')}</span>
               <span className="ml-2 font-medium text-white">{formatDateTime(paste.mixing_start_datetime)}</span>
             </div>
           </div>
@@ -118,14 +119,14 @@ export default function ViscosityModal({
             <div className="flex items-center justify-center mb-2">
               <BeakerIcon className="h-8 w-8 text-blue-400" />
             </div>
-            <p className="text-sm text-neutral-400">Rango válido de viscosidad</p>
+            <p className="text-sm text-neutral-400">{t('viscosityModal.validRange')}</p>
             <p className="text-2xl font-bold text-white">170 - 230</p>
           </div>
         </div>
 
         <div>
           <label htmlFor="viscosity" className="block text-sm font-medium text-neutral-300 mb-2">
-            Valor de viscosidad medido
+            {t('viscosityModal.measuredValue')}
           </label>
           <div className="relative">
             <input
@@ -170,7 +171,7 @@ export default function ViscosityModal({
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-neutral-300 bg-neutral-700 border border-neutral-600 rounded-md shadow-sm hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <XCircleIcon className="h-4 w-4 mr-2" />
-            Cancelar
+            {t('modal.cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -183,12 +184,12 @@ export default function ViscosityModal({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Registrando...
+                {t('viscosityModal.registering')}
               </>
             ) : (
               <>
                 <CheckCircleIcon className="h-4 w-4 mr-2" />
-                Registrar Viscosidad
+                {t('viscosityModal.register')}
               </>
             )}
           </button>

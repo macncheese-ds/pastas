@@ -6,12 +6,13 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { QrCodeIcon } from '@heroicons/react/24/outline';
+import { useLanguage } from '../../i18n';
 
 export default function QRScannerInput({
   onScan,
-  placeholder = 'Escuchando escáner QR...',
   disabled = false,
 }) {
+  const { t } = useLanguage();
   const [value, setValue] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const inputRef = useRef(null);
@@ -143,7 +144,7 @@ export default function QRScannerInput({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={t('scanner.listening')}
         disabled={disabled}
         autoComplete="off"
         autoCorrect="off"
@@ -151,18 +152,18 @@ export default function QRScannerInput({
         spellCheck={false}
         className={`
           block w-full rounded-lg border py-3 pl-10 pr-4
-          text-white placeholder-neutral-400 shadow-sm
+          text-white placeholder-blue-300/40 shadow-sm
           focus:outline-none focus:ring-2
-          disabled:cursor-not-allowed disabled:bg-neutral-800 disabled:text-neutral-500
+          disabled:cursor-not-allowed disabled:bg-blue-950/30 disabled:text-blue-300/30
           ${isScanning 
-            ? 'border-blue-500 ring-2 ring-blue-500/30 bg-neutral-700' 
-            : 'border-green-600 bg-neutral-700 ring-1 ring-green-500/20'
+            ? 'border-blue-500 ring-2 ring-blue-500/30 bg-blue-950/40' 
+            : 'border-blue-700/50 bg-blue-950/40 ring-1 ring-blue-500/10'
           }
         `}
       />
       {isScanning && (
         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-          <span className="text-xs text-blue-400 animate-pulse">Escaneando...</span>
+          <span className="text-xs text-blue-400 animate-pulse">{t('scanner.scanning')}</span>
         </div>
       )}
     </div>

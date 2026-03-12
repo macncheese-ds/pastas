@@ -9,6 +9,7 @@ import StatusBadge from '../ui/StatusBadge';
 import ShelfLifeIndicator from '../ui/ShelfLifeIndicator';
 import WaitTimeCounter from '../ui/WaitTimeCounter';
 import { formatDateTime, formatDate, calculateDaysRemaining } from '../../lib/qrParser';
+import { useLanguage } from '../../i18n';
 import { EyeIcon, ArrowDownTrayIcon, MagnifyingGlassIcon, XMarkIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 export default function PasteTable({
@@ -16,6 +17,7 @@ export default function PasteTable({
   onAction,
   isLoading = false,
 }) {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPartNumber, setFilterPartNumber] = useState('');
   const [filterSmtLocation, setFilterSmtLocation] = useState('');
@@ -75,7 +77,7 @@ export default function PasteTable({
   const handleExportExcel = async () => {
     try {
       const response = await fetch('/api/pastes/export/excel');
-      if (!response.ok) throw new Error('Error al exportar');
+      if (!response.ok) throw new Error(t('errors.exportError'));
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -88,7 +90,6 @@ export default function PasteTable({
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting:', error);
-      alert('Error al exportar los registros');
     }
   };
 
@@ -99,7 +100,7 @@ export default function PasteTable({
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
-        <span className="ml-3 text-neutral-400">Cargando registros...</span>
+        <span className="ml-3 text-blue-300/50">{t('table.loading')}</span>
       </div>
     );
   }
@@ -109,7 +110,7 @@ export default function PasteTable({
       <div className="p-4">
         <div className="text-center py-12">
           <svg
-            className="mx-auto h-12 w-12 text-neutral-500"
+            className="mx-auto h-12 w-12 text-blue-400/30"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -121,9 +122,9 @@ export default function PasteTable({
               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-white">No hay registros</h3>
-          <p className="mt-1 text-sm text-neutral-400">
-            Escanee un código QR para registrar una nueva pasta.
+          <h3 className="mt-2 text-sm font-medium text-white">{t('table.noRecords')}</h3>
+          <p className="mt-1 text-sm text-blue-300/50">
+            {t('table.noRecordsHint')}
           </p>
         </div>
       </div>
@@ -133,17 +134,17 @@ export default function PasteTable({
   return (
     <div className="space-y-4">
       {/* Filters and Export */}
-      <div className="p-4 bg-neutral-900 rounded-lg space-y-3">
+      <div className="p-4 bg-[#0a1628] rounded-lg space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[200px]">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300/40" />
             <input
               type="text"
-              placeholder="Buscar por DID, Lote o Serial..."
+              placeholder={t('table.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 bg-blue-950/40 border border-blue-800/40 rounded-lg text-sm text-white placeholder-blue-300/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -151,9 +152,9 @@ export default function PasteTable({
           <select
             value={filterPartNumber}
             onChange={(e) => setFilterPartNumber(e.target.value)}
-            className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-blue-950/40 border border-blue-800/40 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Todos los números de parte</option>
+            <option value="">{t('table.allPartNumbers')}</option>
             {partNumbers.map(pn => (
               <option key={pn} value={pn}>{pn}</option>
             ))}
@@ -163,9 +164,9 @@ export default function PasteTable({
           <select
             value={filterSmtLocation}
             onChange={(e) => setFilterSmtLocation(e.target.value)}
-            className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-blue-950/40 border border-blue-800/40 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Todas las líneas SMT</option>
+            <option value="">{t('table.allSmtLines')}</option>
             {smtLocations.map(loc => (
               <option key={loc} value={loc}>{loc}</option>
             ))}
@@ -175,10 +176,10 @@ export default function PasteTable({
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-neutral-300 bg-neutral-700 rounded-lg hover:bg-neutral-600 transition-colors"
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-200/70 bg-blue-950/40 rounded-lg hover:bg-blue-900/40 transition-colors"
             >
               <XMarkIcon className="h-4 w-4 mr-1" />
-              Limpiar
+              {t('table.clear')}
             </button>
           )}
 
@@ -188,51 +189,51 @@ export default function PasteTable({
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
           >
             <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-            Exportar Excel
+            {t('table.exportExcel')}
           </button>
         </div>
 
         {/* Results count */}
         {hasActiveFilters && (
-          <div className="text-sm text-neutral-400">
-            Mostrando {filteredPastes.length} de {pastes.length} registros
+          <div className="text-sm text-blue-300/50">
+            {t('table.showing')} {filteredPastes.length} {t('table.of')} {pastes.length} {t('table.records')}
           </div>
         )}
       </div>
       
       {filteredPastes.length === 0 ? (
         <div className="text-center py-12">
-          <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-neutral-500" />
-          <h3 className="mt-2 text-sm font-medium text-white">Sin resultados</h3>
-          <p className="mt-1 text-sm text-neutral-400">
-            No se encontraron pastas con los filtros aplicados.
+          <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-blue-400/30" />
+          <h3 className="mt-2 text-sm font-medium text-white">{t('table.noResults')}</h3>
+          <p className="mt-1 text-sm text-blue-300/50">
+            {t('table.noResultsHint')}
           </p>
           <button
             onClick={clearFilters}
             className="mt-4 inline-flex items-center px-3 py-2 text-sm font-medium text-blue-400 hover:text-blue-300"
           >
-            Limpiar filtros
+            {t('table.clearFilters')}
           </button>
         </div>
       ) : (
         <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-neutral-700">
-          <thead className="bg-neutral-900">
+        <table className="min-w-full divide-y divide-blue-900/40">
+          <thead className="bg-[#0a1628]">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">DID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Lote / Serial</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Número de Parte</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Vencimiento</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Línea SMT</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Estado</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Tiempo Espera</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Vida Útil</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Entrada Fridge</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Viscosidad</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-neutral-400 uppercase tracking-wider">Acciones</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.did')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.lotSerial')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.partNumber')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.expiration')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.smtLine')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.status')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.waitTime')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.shelfLife')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.fridgeEntry')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.viscosity')}</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.actions')}</th>
             </tr>
           </thead>
-          <tbody className="bg-neutral-800 divide-y divide-neutral-700">
+          <tbody className="bg-[#0f1d33] divide-y divide-blue-900/30">
             {filteredPastes.map((paste) => {
               const isExpired = calculateDaysRemaining(paste.expiration_date) < 0;
               const hasDeviation = !!paste.deviation_authorized;
@@ -249,7 +250,7 @@ export default function PasteTable({
                   ? 'bg-orange-900/20 hover:bg-orange-900/30 border-l-2 border-orange-500'
                   : isExpired && !hasDeviation && !isFinished
                     ? 'bg-red-900/10 hover:bg-red-900/20' 
-                    : 'hover:bg-neutral-700';
+                    : 'hover:bg-blue-900/20';
 
               return (
               <tr key={paste.id} className={rowBgClass}>
@@ -259,27 +260,27 @@ export default function PasteTable({
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div>
                     <div className="text-sm font-medium text-white">{paste.lot_number}</div>
-                    <div className="text-sm text-neutral-400">Serial: {paste.lot_serial}</div>
+                    <div className="text-sm text-blue-300/50">{t('table.serial')}: {paste.lot_serial}</div>
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-neutral-200">{paste.part_number}</div>
+                  <div className="text-sm text-blue-100/80">{paste.part_number}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div className={`text-sm font-medium ${isExpired && !isFinished ? 'text-red-400' : 'text-white'}`}>
                     {formatDate(paste.expiration_date)}
                     {isExpired && !isFinished && (
-                      <span className="ml-1 text-xs text-red-500 font-bold">⚠ VENCIDA</span>
+                      <span className="ml-1 text-xs text-red-500 font-bold">⚠ {t('table.expired')}</span>
                     )}
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   {paste.smt_location ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-900/50 text-purple-300">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/40 text-blue-300">
                       {paste.smt_location}
                     </span>
                   ) : (
-                    <span className="text-sm text-neutral-500">-</span>
+                    <span className="text-sm text-blue-300/30">-</span>
                   )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
@@ -289,14 +290,14 @@ export default function PasteTable({
                   {paste.status === 'out_fridge' && paste.fridge_out_datetime ? (
                     <WaitTimeCounter fridgeOutDatetime={paste.fridge_out_datetime} compact />
                   ) : (
-                    <span className="text-sm text-neutral-500">-</span>
+                    <span className="text-sm text-blue-300/30">-</span>
                   )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <ShelfLifeIndicator expirationDate={paste.expiration_date} compact />
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-blue-300/50">
                     {formatDateTime(paste.fridge_in_datetime)}
                   </div>
                 </td>
@@ -308,23 +309,23 @@ export default function PasteTable({
                       {paste.viscosity_value}
                     </span>
                   ) : (
-                    <span className="text-sm text-neutral-500">-</span>
+                    <span className="text-sm text-blue-300/30">-</span>
                   )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <button
                       onClick={() => onAction(paste, 'view')}
-                      className="p-1 text-neutral-400 hover:text-blue-400 transition-colors"
-                      title="Ver detalles"
+                      className="p-1 text-blue-300/50 hover:text-blue-400 transition-colors"
+                      title={t('table.viewDetails')}
                     >
                       <EyeIcon className="h-5 w-5" />
                     </button>
                     {paste.status === 'in_fridge' && (
                       <button
                         onClick={() => onAction(paste, 'editDid')}
-                        className="p-1 text-neutral-400 hover:text-yellow-400 transition-colors"
-                        title="Editar DID"
+                        className="p-1 text-blue-300/50 hover:text-yellow-400 transition-colors"
+                        title={t('table.editDid')}
                       >
                         <PencilIcon className="h-5 w-5" />
                       </button>
@@ -337,9 +338,9 @@ export default function PasteTable({
                             ? 'bg-amber-600 hover:bg-amber-700'
                             : 'bg-blue-600 hover:bg-blue-700'
                         }`}
-                        title={isExpired && !hasDeviation ? 'Requiere desviación' : 'Procesar'}
+                        title={isExpired && !hasDeviation ? t('table.requiresDeviation') : t('table.process')}
                       >
-                        {isExpired && !hasDeviation ? '⚠ Desviación' : 'Procesar'}
+                        {isExpired && !hasDeviation ? `⚠ ${t('table.deviation')}` : t('table.process')}
                       </button>
                     )}
                   </div>

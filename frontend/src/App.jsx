@@ -10,6 +10,8 @@ import FridgeInTab from './components/tabs/FridgeInTab';
 import ReportsTab from './components/tabs/ReportsTab';
 import PartNumbersConfig from './components/tabs/PartNumbersConfig';
 import LoginModal from './components/modals/LoginModal';
+import LanguageSwitcher from './components/ui/LanguageSwitcher';
+import { useLanguage } from './i18n';
 import { login } from './api';
 import {
   Bars3Icon,
@@ -26,6 +28,7 @@ const ALLOWED_CONFIG_ROLES = ['Ingeniero', 'Administrador'];
 const INACTIVITY_TIMEOUT = 2 * 60 * 1000;
 
 export default function App() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('fridge-in');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginBusy, setLoginBusy] = useState(false);
@@ -99,7 +102,7 @@ export default function App() {
           setActiveTab('settings');
         } else {
           setAccessDeniedMessage(
-            `Acceso denegado. Solo Ingeniero o Administrador pueden acceder. Tu rol: ${result.user.rol}`
+            `${t('access.denied')} ${result.user.rol}`
           );
         }
       }
@@ -112,12 +115,12 @@ export default function App() {
 
   /* ─── Sidebar items ─────────────────────────────────── */
   const mainLinks = [
-    { id: 'fridge-in', label: 'Dashboard', Icon: ClipboardDocumentListIcon },
-    { id: 'reports', label: 'Reportes', Icon: ChartBarIcon },
+    { id: 'fridge-in', label: t('sidebar.dashboard'), Icon: ClipboardDocumentListIcon },
+    { id: 'reports', label: t('sidebar.reports'), Icon: ChartBarIcon },
   ];
 
   const configLinks = [
-    { id: 'settings', label: 'Part Numbers', Icon: CogIcon },
+    { id: 'settings', label: t('sidebar.partNumbers'), Icon: CogIcon },
   ];
 
   return (
@@ -126,10 +129,10 @@ export default function App() {
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         {/* Brand */}
         <div className="sidebar-brand">
-          <CpuChipIcon className="brand-icon" style={{ color: '#60a5fa' }} />
+          <CpuChipIcon className="brand-icon" style={{ color: '#3b82f6' }} />
           <span className="brand-text">
-            <span className="brand-title">HKL Solder Paste Management System</span>
-            <span className="brand-subtitle">Sistema de Trazabilidad de Pastas de Soldadura</span>
+            <span className="brand-title">{t('app.brandTitle')}</span>
+            <span className="brand-subtitle">{t('app.brandSubtitle')}</span>
           </span>
         </div>
 
@@ -139,7 +142,7 @@ export default function App() {
           <button
             className="nav-link sidebar-collapse-btn"
             onClick={() => setSidebarCollapsed(prev => !prev)}
-            title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+            title={sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}
           >
             <span className="nav-icon">
               {sidebarCollapsed
@@ -147,7 +150,7 @@ export default function App() {
                 : <ChevronLeftIcon className="h-5 w-5" />
               }
             </span>
-            <span className="nav-label">Colapsar</span>
+            <span className="nav-label">{t('sidebar.collapse')}</span>
           </button>
 
           <div className="sidebar-divider" />
@@ -171,9 +174,9 @@ export default function App() {
             <button
               className="sidebar-section-toggle"
               onClick={() => setConfigOpen(prev => !prev)}
-              title={sidebarCollapsed ? 'Configuración' : undefined}
+              title={sidebarCollapsed ? t('sidebar.config') : undefined}
             >
-              <span className="section-label">Configuración</span>
+              <span className="section-label">{t('sidebar.config')}</span>
               <span className={`toggle-arrow ${configOpen ? 'open' : ''}`}>
                 <ChevronRightIcon className="h-3 w-3" />
               </span>
@@ -199,6 +202,7 @@ export default function App() {
 
           {/* Footer */}
           <div className="sidebar-footer">
+            <LanguageSwitcher collapsed={sidebarCollapsed} />
             {authenticatedUser && (
               <>
                 <span className="user-chip">
@@ -210,7 +214,7 @@ export default function App() {
                   <span className="nav-icon">
                     <ArrowRightOnRectangleIcon className="h-5 w-5" />
                   </span>
-                  <span className="nav-label">Cerrar sesión</span>
+                  <span className="nav-label">{t('sidebar.logout')}</span>
                 </button>
               </>
             )}
@@ -226,34 +230,34 @@ export default function App() {
           <div className="space-y-6">
             <div className="card"><PartNumbersConfig /></div>
             <div className="card">
-              <h2 className="text-lg font-semibold text-white mb-4">Configuración General</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">{t('settings.title')}</h2>
               <div className="space-y-6">
-                <div className="border-b border-neutral-700 pb-6">
-                  <h3 className="text-sm font-medium text-white mb-2">Rango de Viscosidad Válido</h3>
+                <div className="border-b border-blue-900/40 pb-6">
+                  <h3 className="text-sm font-medium text-white mb-2">{t('settings.viscosityRange')}</h3>
                   <div className="flex items-center space-x-4">
                     <div>
-                      <label className="block text-xs text-neutral-400">Mínimo</label>
+                      <label className="block text-xs text-blue-300/60">{t('settings.minimum')}</label>
                       <input type="number" defaultValue={150} disabled
-                        className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm text-sm" />
+                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-blue-950/40 text-white shadow-sm text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs text-neutral-400">Máximo</label>
+                      <label className="block text-xs text-blue-300/60">{t('settings.maximum')}</label>
                       <input type="number" defaultValue={180} disabled
-                        className="mt-1 block w-24 rounded-md border-neutral-600 bg-neutral-700 text-white shadow-sm text-sm" />
+                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-blue-950/40 text-white shadow-sm text-sm" />
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-neutral-400">El rango de viscosidad está configurado en el código.</p>
+                  <p className="mt-2 text-xs text-blue-300/50">{t('settings.viscosityNote')}</p>
                 </div>
-                <div className="border-b border-neutral-700 pb-6">
-                  <h3 className="text-sm font-medium text-white mb-2">Base de Datos</h3>
-                  <p className="text-sm text-neutral-300">Conexión a MySQL configurada en variables de entorno del backend.</p>
+                <div className="border-b border-blue-900/40 pb-6">
+                  <h3 className="text-sm font-medium text-white mb-2">{t('settings.database')}</h3>
+                  <p className="text-sm text-blue-200/70">{t('settings.databaseNote')}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-white mb-2">Formato de Código QR</h3>
-                  <div className="bg-neutral-700 rounded-lg p-4 text-sm font-mono text-neutral-200">
-                    <p className="mb-2">Formato esperado (5 campos separados por comas):</p>
+                  <h3 className="text-sm font-medium text-white mb-2">{t('settings.qrFormat')}</h3>
+                  <div className="bg-blue-950/40 rounded-lg p-4 text-sm font-mono text-blue-200/80">
+                    <p className="mb-2">{t('settings.expectedFormat')}</p>
                     <p className="text-blue-400">lote,parte,expiración,fabricación,serial</p>
-                    <p className="mt-2 text-neutral-400">Ejemplo:</p>
+                    <p className="mt-2 text-blue-300/50">{t('settings.example')}</p>
                     <p className="text-green-400">50822985,k01.005-00m-2,260218,250909,017</p>
                   </div>
                 </div>

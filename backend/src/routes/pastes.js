@@ -941,41 +941,61 @@ router.post('/:id/scan', async (req, res) => {
         }
 
         if (viscosity_value === undefined || viscosity_value === null) {
-          return res.status(400).json({
-            success: false,
-            error: 'Valor de viscosidad requerido',
-          });
+          // Check if another paste in the same lot already has viscosity registered
+          const lotViscosityCheck = await query(
+            `SELECT id, viscosity_value, viscosity_datetime, viscosity_user FROM solder_paste 
+             WHERE lot_number = ? AND id != ? AND viscosity_value IS NOT NULL 
+             AND status IN ('viscosity_ok', 'opened', 'removed', 'completed')
+             ORDER BY viscosity_datetime ASC LIMIT 1`,
+            [paste.lot_number, pasteId]
+          );
+
+          if (lotViscosityCheck.length > 0) {
+            // Another paste in the same lot has viscosity - auto-apply it
+            const existingViscosity = lotViscosityCheck[0];
+            viscosity_value = existingViscosity.viscosity_value;
+            
+            updateQuery = `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), viscosity_user = ?, status = 'viscosity_ok' WHERE id = ?`;
+            updateParams = [viscosity_value, user_name.trim(), pasteId];
+            newStatus = 'viscosity_ok';
+            logNotes = `Viscosidad aprobada: ${viscosity_value} (heredada del lote - pasta #${existingViscosity.id})`;
+          } else {
+            return res.status(400).json({
+              success: false,
+              error: 'Valor de viscosidad requerido',
+            });
+          }
+        } else {
+          // Viscosity value provided - validate and apply
+          if (!isValidViscosity(viscosity_value)) {
+            // Reject - out of range
+            await query(
+              `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), viscosity_user = ?, status = 'rejected' WHERE id = ?`,
+              [viscosity_value, user_name.trim(), pasteId]
+            );
+
+            await query(
+              `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, ?, ?, ?)`,
+              [pasteId, 'viscosity_check', user_name.trim(), `Viscosidad rechazada: ${viscosity_value} (fuera de rango 170-230). Volver a mezclar.`]
+            );
+
+            const updatedPaste = await query(
+              `SELECT * FROM solder_paste WHERE id = ?`,
+              [pasteId]
+            );
+
+            return res.json({
+              success: false,
+              data: updatedPaste[0],
+              error: `Viscosidad ${viscosity_value} fuera de rango. Debe estar entre 170-230. Por favor, vuelva a mezclar.`,
+            });
+          }
+
+          updateQuery = `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), viscosity_user = ?, status = 'viscosity_ok' WHERE id = ?`;
+          updateParams = [viscosity_value, user_name.trim(), pasteId];
+          newStatus = 'viscosity_ok';
+          logNotes = `Viscosidad aprobada: ${viscosity_value}`;
         }
-
-        if (!isValidViscosity(viscosity_value)) {
-          // Reject - out of range
-          await query(
-            `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), viscosity_user = ?, status = 'rejected' WHERE id = ?`,
-            [viscosity_value, user_name.trim(), pasteId]
-          );
-
-          await query(
-            `INSERT INTO scan_log (solder_paste_id, scan_type, user_name, notes) VALUES (?, ?, ?, ?)`,
-            [pasteId, 'viscosity_check', user_name.trim(), `Viscosidad rechazada: ${viscosity_value} (fuera de rango 170-230). Volver a mezclar.`]
-          );
-
-          const updatedPaste = await query(
-            `SELECT * FROM solder_paste WHERE id = ?`,
-            [pasteId]
-          );
-
-          return res.json({
-            success: false,
-            data: updatedPaste[0],
-            error: `Viscosidad ${viscosity_value} fuera de rango. Debe estar entre 170-230. Por favor, vuelva a mezclar.`,
-          });
-        }
-
-        updateQuery = `UPDATE solder_paste SET viscosity_value = ?, viscosity_datetime = NOW(), viscosity_user = ?, status = 'viscosity_ok' WHERE id = ?`;
-        updateParams = [viscosity_value, user_name.trim(), pasteId];
-        newStatus = 'viscosity_ok';
-        logNotes = `Viscosidad aprobada: ${viscosity_value}`;
-        break;
 
       case 'opened':
         if (currentStatus !== 'viscosity_ok') {

@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
+import { useLanguage } from '../../i18n';
 import { CheckCircleIcon, XCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function ManualEntryModal({
@@ -14,6 +15,7 @@ export default function ManualEntryModal({
   onConfirm,
   isLoading = false,
 }) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     did: '',
     lotNumber: '',
@@ -26,7 +28,7 @@ export default function ManualEntryModal({
 
   useEffect(() => {
     if (!isOpen) {
-      const t = setTimeout(() => {
+      const timer = setTimeout(() => {
         setFormData({
           did: '',
           lotNumber: '',
@@ -37,7 +39,7 @@ export default function ManualEntryModal({
         });
         setErrors({});
       }, 0);
-      return () => clearTimeout(t);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -56,29 +58,29 @@ export default function ManualEntryModal({
     const newErrors = {};
 
     if (!formData.did.trim()) {
-      newErrors.did = 'El DID es obligatorio';
+      newErrors.did = t('newPaste.didRequired');
     }
     if (!formData.lotNumber.trim()) {
-      newErrors.lotNumber = 'El número de lote es obligatorio';
+      newErrors.lotNumber = t('manualEntryModal.lotRequired');
     }
     if (!formData.lotSerial.trim()) {
-      newErrors.lotSerial = 'El serial es obligatorio';
+      newErrors.lotSerial = t('manualEntryModal.serialRequired');
     }
     if (!formData.partNumber.trim()) {
-      newErrors.partNumber = 'El número de parte es obligatorio';
+      newErrors.partNumber = t('manualEntryModal.partRequired');
     }
     if (!formData.manufactureDate) {
-      newErrors.manufactureDate = 'La fecha de fabricación es obligatoria';
+      newErrors.manufactureDate = t('manualEntryModal.mfgRequired');
     }
     if (!formData.expirationDate) {
-      newErrors.expirationDate = 'La fecha de expiración es obligatoria';
+      newErrors.expirationDate = t('manualEntryModal.expRequired');
     }
 
     if (formData.manufactureDate && formData.expirationDate) {
       const mfgDate = new Date(formData.manufactureDate);
       const expDate = new Date(formData.expirationDate);
       if (expDate <= mfgDate) {
-        newErrors.expirationDate = 'La fecha de expiración debe ser posterior a la fecha de fabricación';
+        newErrors.expirationDate = t('manualEntryModal.expAfterMfg');
       }
     }
 
@@ -111,26 +113,25 @@ export default function ManualEntryModal({
   `;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Ingreso Manual de Pasta" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('manualEntryModal.title')} size="lg">
       <div className="space-y-6">
         <div className="rounded-lg bg-blue-900/30 p-4 border border-blue-800">
           <p className="text-sm text-blue-300">
-            Use este formulario cuando el código QR no pueda ser escaneado correctamente.
-            Todos los campos son obligatorios.
+            {t('manualEntryModal.hint')}
           </p>
         </div>
 
         <div className="space-y-4">
           <div>
             <label htmlFor="did" className="block text-sm font-medium text-neutral-300 mb-1">
-              DID (Document Identification) <span className="text-red-400">*</span>
+              {t('newPaste.didLabel')} <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               id="did"
               value={formData.did}
               onChange={handleChange('did')}
-              placeholder="Ingrese el DID..."
+              placeholder="DID..."
               className={inputClasses('did')}
             />
             {errors.did && (
@@ -144,7 +145,7 @@ export default function ManualEntryModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="lotNumber" className="block text-sm font-medium text-neutral-300 mb-1">
-                Número de Lote <span className="text-red-400">*</span>
+                {t('manualEntryModal.lotNumber')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -164,7 +165,7 @@ export default function ManualEntryModal({
 
             <div>
               <label htmlFor="lotSerial" className="block text-sm font-medium text-neutral-300 mb-1">
-                Serial <span className="text-red-400">*</span>
+                {t('manualEntryModal.serial')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -185,7 +186,7 @@ export default function ManualEntryModal({
 
           <div>
             <label htmlFor="partNumber" className="block text-sm font-medium text-neutral-300 mb-1">
-              Número de Parte <span className="text-red-400">*</span>
+              {t('manualEntryModal.partNumber')} <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -206,7 +207,7 @@ export default function ManualEntryModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="manufactureDate" className="block text-sm font-medium text-neutral-300 mb-1">
-                Fecha de Fabricación <span className="text-red-400">*</span>
+                {t('manualEntryModal.manufactureDate')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="date"
@@ -225,7 +226,7 @@ export default function ManualEntryModal({
 
             <div>
               <label htmlFor="expirationDate" className="block text-sm font-medium text-neutral-300 mb-1">
-                Fecha de Expiración <span className="text-red-400">*</span>
+                {t('manualEntryModal.expirationDate')} <span className="text-red-400">*</span>
               </label>
               <input
                 type="date"
@@ -251,7 +252,7 @@ export default function ManualEntryModal({
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-neutral-300 bg-neutral-700 border border-neutral-600 rounded-md shadow-sm hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             <XCircleIcon className="h-4 w-4 mr-2" />
-            Cancelar
+            {t('modal.cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -264,12 +265,12 @@ export default function ManualEntryModal({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Guardando...
+                {t('modal.saving')}
               </>
             ) : (
               <>
                 <CheckCircleIcon className="h-4 w-4 mr-2" />
-                Registrar Pasta
+                {t('manualEntryModal.register')}
               </>
             )}
           </button>

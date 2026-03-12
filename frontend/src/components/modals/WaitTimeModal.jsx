@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Modal from '../ui/Modal';
 import { formatDateTime } from '../../lib/qrParser';
+import { useLanguage } from '../../i18n';
 import { ClockIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 export default function WaitTimeModal({
@@ -14,6 +15,7 @@ export default function WaitTimeModal({
   onClose,
   paste,
 }) {
+  const { t } = useLanguage();
   const [timeRemaining, setTimeRemaining] = useState(null);
 
   const calculateTimeRemaining = useCallback(() => {
@@ -50,17 +52,17 @@ export default function WaitTimeModal({
   const formatTimeUnit = (value) => value.toString().padStart(2, '0');
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Tiempo de Espera Requerido" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('waitTime.title')} size="md">
       <div className="space-y-6">
         <div className="rounded-lg bg-amber-900/30 border border-amber-700 p-4">
           <div className="flex items-start">
             <ClockIcon className="h-5 w-5 text-amber-400 mr-2 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-300">
-                Período de estabilización requerido
+                {t('waitTime.stabilization')}
               </p>
               <p className="text-sm text-amber-400 mt-1">
-                La pasta debe esperar 4 horas después de salir del refrigerador antes de poder iniciar el mezclado.
+                {t('waitTime.stabilizationDesc')}
               </p>
             </div>
           </div>
@@ -69,19 +71,19 @@ export default function WaitTimeModal({
         <div className="rounded-lg border border-neutral-700 p-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">
-              <span className="text-neutral-400">DID:</span>
+              <span className="text-neutral-400">{t('pasteDetails.did')}</span>
               <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
             </div>
             <div>
-              <span className="text-neutral-400">Lote:</span>
+              <span className="text-neutral-400">{t('pasteDetails.lot')}</span>
               <span className="ml-2 font-medium text-white">{paste.lot_number}</span>
             </div>
             <div>
-              <span className="text-neutral-400">Serial:</span>
+              <span className="text-neutral-400">{t('pasteDetails.serial')}</span>
               <span className="ml-2 font-medium text-white">{paste.lot_serial}</span>
             </div>
             <div className="col-span-2">
-              <span className="text-neutral-400">Salida del refrigerador:</span>
+              <span className="text-neutral-400">{t('waitTime.fridgeExit')}</span>
               <span className="ml-2 font-medium text-white">{formatDateTime(paste.fridge_out_datetime)}</span>
             </div>
           </div>
@@ -92,35 +94,35 @@ export default function WaitTimeModal({
             {timeRemaining.completed ? (
               <div className="rounded-lg bg-green-900/30 border border-green-700 p-4">
                 <p className="text-lg font-medium text-green-300">
-                  ✓ Tiempo de espera completado
+                  ✓ {t('waitTime.completed')}
                 </p>
                 <p className="text-sm text-green-400 mt-1">
-                  La pasta puede iniciar el proceso de mezclado.
+                  {t('waitTime.completedDesc')}
                 </p>
               </div>
             ) : (
               <>
-                <p className="text-sm text-neutral-400 mb-3">Tiempo restante</p>
+                <p className="text-sm text-neutral-400 mb-3">{t('waitTime.remaining')}</p>
                 <div className="flex items-center justify-center space-x-2">
                   <div className="bg-neutral-700 rounded-lg p-3 min-w-[60px]">
                     <p className="text-3xl font-mono font-bold text-amber-400">
                       {formatTimeUnit(timeRemaining.hours)}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1">Horas</p>
+                    <p className="text-xs text-neutral-400 mt-1">{t('waitTime.hours')}</p>
                   </div>
                   <span className="text-2xl text-neutral-500">:</span>
                   <div className="bg-neutral-700 rounded-lg p-3 min-w-[60px]">
                     <p className="text-3xl font-mono font-bold text-amber-400">
                       {formatTimeUnit(timeRemaining.minutes)}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1">Minutos</p>
+                    <p className="text-xs text-neutral-400 mt-1">{t('waitTime.minutes')}</p>
                   </div>
                   <span className="text-2xl text-neutral-500">:</span>
                   <div className="bg-neutral-700 rounded-lg p-3 min-w-[60px]">
                     <p className="text-3xl font-mono font-bold text-amber-400">
                       {formatTimeUnit(timeRemaining.seconds)}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1">Segundos</p>
+                    <p className="text-xs text-neutral-400 mt-1">{t('waitTime.seconds')}</p>
                   </div>
                 </div>
               </>
@@ -134,7 +136,7 @@ export default function WaitTimeModal({
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-neutral-300 bg-neutral-700 border border-neutral-600 rounded-md shadow-sm hover:bg-neutral-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <XCircleIcon className="h-4 w-4 mr-2" />
-            Cerrar
+            {t('modal.close')}
           </button>
         </div>
       </div>
