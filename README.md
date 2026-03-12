@@ -22,7 +22,7 @@ An SMT solder paste traceability system designed to track and manage solder past
 
 ## Demo
 
-![Inventory Management Demo](docs/demos/inventory-management.gif)
+![Inventory Management Demo](docs/pastas.gif)
 
 ---
 
