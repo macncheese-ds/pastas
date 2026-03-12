@@ -320,6 +320,7 @@ const translations = {
       minutes: 'Minutes',
       seconds: 'Seconds',
     },
+    reports: {
       title: 'Reports Dashboard',
       subtitle: 'System analytics and metrics',
       today: 'Today',
