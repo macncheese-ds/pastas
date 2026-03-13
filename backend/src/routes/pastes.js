@@ -996,6 +996,7 @@ router.post('/:id/scan', async (req, res) => {
           newStatus = 'viscosity_ok';
           logNotes = `Viscosidad aprobada: ${viscosity_value}`;
         }
+        break;
 
       case 'opened':
         if (currentStatus !== 'viscosity_ok') {
