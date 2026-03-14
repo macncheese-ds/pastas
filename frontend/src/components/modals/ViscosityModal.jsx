@@ -1,6 +1,7 @@
 /**
  * =====================================================
  * Viscosity Modal Component
+ * Supports manual input AND inherited-from-lot display
  * =====================================================
  */
 
@@ -13,6 +14,7 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
   BeakerIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 
 export default function ViscosityModal({
@@ -21,6 +23,8 @@ export default function ViscosityModal({
   onConfirm,
   paste,
   isLoading = false,
+  inheritedValue = null,    // If set, display this value as auto-inherited from lot
+  inheritedFromId = null,   // ID of the paste the value was inherited from
 }) {
   const { t } = useLanguage();
   const [viscosity, setViscosity] = useState('');
@@ -39,6 +43,7 @@ export default function ViscosityModal({
   if (!paste) return null;
 
   const isRejected = paste.status === 'rejected';
+  const isInherited = inheritedValue !== null && inheritedValue !== undefined;
 
   const handleChange = (e) => {
     const value = e.target.value;
@@ -56,6 +61,11 @@ export default function ViscosityModal({
   };
 
   const handleSubmit = () => {
+    if (isInherited) {
+      onConfirm(inheritedValue);
+      return;
+    }
+
     const numValue = parseFloat(viscosity);
 
     if (isNaN(numValue)) {
@@ -72,12 +82,42 @@ export default function ViscosityModal({
   };
 
   const numericValue = parseFloat(viscosity);
-  const isValidValue = !isNaN(numericValue) && isValidViscosity(numericValue);
+  const isValidValue = isInherited || (!isNaN(numericValue) && isValidViscosity(numericValue));
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('viscosityModal.title')} size="lg">
       <div className="space-y-6">
-        {isRejected && (
+        {/* Inherited value banner */}
+        {isInherited && (
+          <div className="rounded-lg bg-blue-900/30 border border-blue-600 p-4">
+            <div className="flex items-start">
+              <InformationCircleIcon className="h-5 w-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-300">
+                  {t('viscosityModal.autoApplied')}
+                </p>
+                <p className="text-sm text-blue-400 mt-1">
+                  {t('viscosityModal.autoAppliedDesc', {
+                    value: inheritedValue,
+                    lot: paste.lot_number,
+                  })}
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-xs text-blue-400 mb-1">{t('viscosityModal.measuredValue')}</p>
+                <p className="text-4xl font-bold text-blue-300">{inheritedValue}</p>
+                <p className="text-xs text-green-400 mt-1">
+                  <CheckCircleIcon className="h-4 w-4 inline mr-1" />
+                  {t('viscosityModal.validRange')}: 170 - 230
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isRejected && !isInherited && (
           <div className="rounded-lg bg-red-900/30 border border-red-700 p-4">
             <div className="flex items-start">
               <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2 mt-0.5" />
@@ -114,55 +154,60 @@ export default function ViscosityModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-center">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <BeakerIcon className="h-8 w-8 text-blue-400" />
+        {/* Manual input — only when NOT inherited */}
+        {!isInherited && (
+          <>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <BeakerIcon className="h-8 w-8 text-blue-400" />
+                </div>
+                <p className="text-sm text-neutral-400">{t('viscosityModal.validRange')}</p>
+                <p className="text-2xl font-bold text-white">170 - 230</p>
+              </div>
             </div>
-            <p className="text-sm text-neutral-400">{t('viscosityModal.validRange')}</p>
-            <p className="text-2xl font-bold text-white">170 - 230</p>
-          </div>
-        </div>
 
-        <div>
-          <label htmlFor="viscosity" className="block text-sm font-medium text-neutral-300 mb-2">
-            {t('viscosityModal.measuredValue')}
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              id="viscosity"
-              value={viscosity}
-              onChange={handleChange}
-              placeholder="Ej: 165"
-              min="0"
-              max="999"
-              step="0.1"
-              className={`
-                block w-full rounded-lg border px-4 py-3 text-lg text-center font-semibold bg-neutral-700
-                focus:outline-none focus:ring-2
-                ${error
-                  ? 'border-red-500 text-red-300 focus:border-red-500 focus:ring-red-500'
-                  : isValidValue
-                    ? 'border-green-500 text-green-300 focus:border-green-500 focus:ring-green-500'
-                    : 'border-neutral-600 text-white focus:border-blue-500 focus:ring-blue-500'
-                }
-              `}
-              autoFocus
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              {isValidValue && (
-                <CheckCircleIcon className="h-6 w-6 text-green-400" />
-              )}
+            <div>
+              <label htmlFor="viscosity" className="block text-sm font-medium text-neutral-300 mb-2">
+                {t('viscosityModal.measuredValue')}
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  id="viscosity"
+                  value={viscosity}
+                  onChange={handleChange}
+                  placeholder="Ej: 165"
+                  min="0"
+                  max="999"
+                  step="0.1"
+                  className={`
+                    block w-full rounded-lg border px-4 py-3 text-lg text-center font-semibold bg-neutral-700
+                    focus:outline-none focus:ring-2
+                    ${error
+                      ? 'border-red-500 text-red-300 focus:border-red-500 focus:ring-red-500'
+                      : isValidValue
+                        ? 'border-green-500 text-green-300 focus:border-green-500 focus:ring-green-500'
+                        : 'border-neutral-600 text-white focus:border-blue-500 focus:ring-blue-500'
+                    }
+                  `}
+                  autoFocus
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  {isValidValue && (
+                    <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                  )}
+                  {error && (
+                    <XCircleIcon className="h-6 w-6 text-red-400" />
+                  )}
+                </div>
+              </div>
               {error && (
-                <XCircleIcon className="h-6 w-6 text-red-400" />
+                <p className="mt-2 text-sm text-red-400">{error}</p>
               )}
             </div>
-          </div>
-          {error && (
-            <p className="mt-2 text-sm text-red-400">{error}</p>
-          )}
-        </div>
+          </>
+        )}
 
         <div className="flex justify-end space-x-3 pt-4 border-t border-neutral-700">
           <button
@@ -189,7 +234,7 @@ export default function ViscosityModal({
             ) : (
               <>
                 <CheckCircleIcon className="h-4 w-4 mr-2" />
-                {t('viscosityModal.register')}
+                {isInherited ? t('modal.confirm') : t('viscosityModal.register')}
               </>
             )}
           </button>

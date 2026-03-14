@@ -61,6 +61,7 @@ export default function FridgeInTab({ smtLocation }) {
   const [authorizedLines, setAuthorizedLines] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingDeviationAction, setPendingDeviationAction] = useState(null);
+  const [inheritedViscosity, setInheritedViscosity] = useState(null);
 
   // Auth state
   const [currentUser, setCurrentUser] = useState(null);
@@ -456,12 +457,14 @@ export default function FridgeInTab({ smtLocation }) {
     });
   };
 
-  // Check for existing viscosity in the same lot and auto-apply if found
-  const handleViscosityCheckAndApply = async (paste) => {
-    if (!paste || !paste.lot_number) return false;
+  // Open viscosity modal — check if lot already has a value and pre-fill it
+  const openViscosityModalWithAutoCheck = async (paste) => {
+    if (!paste) return;
+    setSelectedPaste(paste);
+    setInheritedViscosity(null); // reset
 
+    // Check if another paste in the same lot already has viscosity
     try {
-      // Check if another paste in the same lot already has viscosity
       const response = await fetch(
         `/api/pastes?lot_number=${encodeURIComponent(paste.lot_number)}&status_in=viscosity_ok,opened,removed,completed`,
         { method: 'GET' }
@@ -469,36 +472,21 @@ export default function FridgeInTab({ smtLocation }) {
 
       if (response.ok) {
         const result = await response.json();
-        const pastes = result.data || result;
-        
-        // Find the first paste with viscosity in this lot
-        const pasteWithViscosity = pastes.find(p => p.viscosity_value && p.id !== paste.id);
-        
+        const lotPastes = result.data || result;
+        const pasteWithViscosity = (Array.isArray(lotPastes) ? lotPastes : [lotPastes])
+          .find(p => p && p.viscosity_value && p.id !== paste.id);
+
         if (pasteWithViscosity) {
-          // Auto-apply the viscosity value
-          await handleViscositySubmit(pasteWithViscosity.viscosity_value);
-          return true;
+          // Set the inherited value — modal will display it for user confirmation
+          setInheritedViscosity(pasteWithViscosity.viscosity_value);
         }
       }
     } catch (err) {
       console.log('Could not check for existing viscosity:', err);
     }
-    
-    return false;
-  };
 
-  // Open viscosity modal with auto-check
-  const openViscosityModalWithAutoCheck = async (paste) => {
-    if (!paste) return;
-    setSelectedPaste(paste);
-    
-    // Try to auto-apply viscosity
-    const autoApplied = await handleViscosityCheckAndApply(paste);
-    
-    // If not auto-applied, show the modal
-    if (!autoApplied) {
-      setShowViscosityModal(true);
-    }
+    // Always show the modal — either with inherited value or manual input
+    setShowViscosityModal(true);
   };
 
   // Submit viscosity
@@ -878,10 +866,12 @@ export default function FridgeInTab({ smtLocation }) {
         onClose={() => {
           setShowViscosityModal(false);
           setSelectedPaste(null);
+          setInheritedViscosity(null);
         }}
         onConfirm={handleViscositySubmit}
         paste={selectedPaste}
         isLoading={isProcessing}
+        inheritedValue={inheritedViscosity}
       />
 
       <OpenPasteModal
