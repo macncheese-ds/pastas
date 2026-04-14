@@ -43,7 +43,7 @@ export default function PasteDetailsModal({
       datetime: paste.fridge_out_datetime,
       user: paste.fridge_out_user,
       icon: CheckCircleIcon,
-      color: 'text-blue-400',
+      color: 'text-gray-500',
     },
     {
       label: t('pasteDetails.mixStart'),
@@ -101,7 +101,7 @@ export default function PasteDetailsModal({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">
               <span className="text-neutral-400">{t('pasteDetails.did')}</span>
-              <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
+              <span className="ml-2 font-medium text-gray-500">{paste.did}</span>
             </div>
             <div>
               <span className="text-neutral-400">{t('pasteDetails.lot')}</span>
@@ -160,7 +160,7 @@ export default function PasteDetailsModal({
                       <div className="text-sm font-medium text-white">{item.label}</div>
                       <div className="text-xs text-neutral-400 mt-0.5">{formatDateTime(item.datetime)}</div>
                       {item.user && (
-                        <div className="flex items-center mt-1.5 text-xs text-blue-400">
+                        <div className="flex items-center mt-1.5 text-xs text-gray-500">
                           <UserIcon className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                           <span className="font-medium">{item.user}</span>
                         </div>

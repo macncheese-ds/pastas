@@ -86,8 +86,8 @@ export default function NewPasteModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('newPaste.title')} size="lg">
       <div className="space-y-6">
-        <div className="rounded-lg bg-blue-900/30 p-4 border border-blue-800">
-          <p className="text-sm text-blue-300">
+        <div className="rounded-lg bg-white p-4 border border-blue-800">
+          <p className="text-sm text-gray-600">
             {requiresManualEntry ? t('newPaste.verifyHintWithDate') : t('newPaste.verifyHint')}
           </p>
         </div>

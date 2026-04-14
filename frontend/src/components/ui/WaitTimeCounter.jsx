@@ -96,7 +96,7 @@ export default function WaitTimeCounter({ fridgeOutDatetime, compact = false }) 
   }
 
   return (
-    <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-blue-950/40">
+    <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-white">
       {timeRemaining.completed ? (
         <>
           <CheckCircleIcon className="h-5 w-5 text-green-400" />
@@ -106,7 +106,7 @@ export default function WaitTimeCounter({ fridgeOutDatetime, compact = false }) 
         <>
           <ClockIcon className="h-5 w-5 text-yellow-400 animate-pulse" />
           <div className="flex flex-col">
-            <span className="text-xs text-blue-300/50">{t('waitTime.remaining')}:</span>
+            <span className="text-xs text-gray-600/50">{t('waitTime.remaining')}:</span>
             <span className="text-sm font-mono font-bold text-yellow-400">
               {timeRemaining.hours > 0 && `${pad(timeRemaining.hours)}:`}
               {pad(timeRemaining.minutes)}:{pad(timeRemaining.seconds)}

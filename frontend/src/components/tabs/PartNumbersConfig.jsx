@@ -274,7 +274,7 @@ export default function PartNumbersConfig() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <ArrowPathIcon className="h-8 w-8 text-blue-400 animate-spin" />
+        <ArrowPathIcon className="h-8 w-8 text-gray-500 animate-spin" />
       </div>
     );
   }
@@ -299,7 +299,7 @@ export default function PartNumbersConfig() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">{t('partConfig.title')}</h2>
-          <p className="text-sm text-blue-400 mt-1">{t('partConfig.subtitle')}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('partConfig.subtitle')}</p>
         </div>
         <button
           onClick={handleOpenAddModal}
@@ -340,7 +340,7 @@ export default function PartNumbersConfig() {
               </h3>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-blue-400 hover:text-white"
+                className="text-gray-500 hover:text-white"
               >
                 <XMarkIcon className="h-6 w-6" />
               </button>
@@ -354,7 +354,7 @@ export default function PartNumbersConfig() {
                   value={newPartNumber}
                   onChange={(e) => setNewPartNumber(e.target.value)}
                   placeholder="Ex: K01.005-00M-2"
-                  className="w-full rounded-lg border border-blue-700 bg-blue-900 px-3 py-2 text-white placeholder-blue-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-blue-700 bg-blue-900 px-3 py-2 text-black placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -365,7 +365,7 @@ export default function PartNumbersConfig() {
                   value={newDescription}
                   onChange={(e) => setNewDescription(e.target.value)}
                   placeholder="Description of the part number"
-                  className="w-full rounded-lg border border-blue-700 bg-blue-900 px-3 py-2 text-white placeholder-blue-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-lg border border-blue-700 bg-blue-900 px-3 py-2 text-black placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
 
@@ -381,7 +381,7 @@ export default function PartNumbersConfig() {
                         className="w-4 h-4 rounded border-blue-700 text-blue-600 focus:ring-blue-500"
                       />
                       <span className="ml-2 text-sm text-white">{line.line_name}</span>
-                      <span className="ml-auto text-xs text-blue-400">{line.smt_code || 'SMT'}</span>
+                      <span className="ml-auto text-xs text-gray-500">{line.smt_code || 'SMT'}</span>
                     </label>
                   ))}
                 </div>
@@ -391,7 +391,7 @@ export default function PartNumbersConfig() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-2 text-sm font-medium text-blue-300 bg-blue-800 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-600 bg-blue-800 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   {t('partConfig.cancel')}
                 </button>
@@ -414,17 +414,17 @@ export default function PartNumbersConfig() {
           <table className="w-full">
             <thead>
               <tr className="bg-blue-950 border-b border-blue-800">
-                <th className="text-left py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.partNumber')}</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.description')}</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.authorizedLines')}</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-blue-400">{t('partConfig.tableHeaders.actions')}</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">{t('partConfig.tableHeaders.partNumber')}</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">{t('partConfig.tableHeaders.description')}</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">{t('partConfig.tableHeaders.authorizedLines')}</th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">{t('partConfig.tableHeaders.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {partNumbers.map((pn) => (
-                <tr key={pn.id} className="border-b border-blue-800 hover:bg-blue-800/30 transition-colors">
+                <tr key={pn.id} className="border-b border-blue-800 hover:bg-white transition-colors">
                   <td className="py-3 px-4 text-white font-medium">{pn.part_number}</td>
-                  <td className="py-3 px-4 text-blue-300">{pn.description || '-'}</td>
+                  <td className="py-3 px-4 text-gray-600">{pn.description || '-'}</td>
                   <td className="py-3 px-4">
                     <div className="flex flex-wrap gap-1">
                       {getAuthorizedLines(pn.id).length > 0 ? (
@@ -442,7 +442,7 @@ export default function PartNumbersConfig() {
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleOpenEditModal(pn)}
-                        className="text-blue-400 hover:text-blue-300 p-1 transition-colors"
+                        className="text-gray-500 hover:text-gray-600 p-1 transition-colors"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
@@ -458,7 +458,7 @@ export default function PartNumbersConfig() {
               ))}
               {partNumbers.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-blue-400">
+                  <td colSpan={4} className="py-8 text-center text-gray-500">
                     {t('partConfig.noPartNumbers')}
                   </td>
                 </tr>
@@ -479,7 +479,7 @@ export default function PartNumbersConfig() {
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h4 className="text-white font-semibold">{line.line_name}</h4>
-                    <p className="text-xs text-blue-400 mt-1">{line.smt_code || 'SMT'}</p>
+                    <p className="text-xs text-gray-500 mt-1">{line.smt_code || 'SMT'}</p>
                   </div>
                   <button
                     onClick={() => handleDeleteLine(line.id)}
@@ -488,7 +488,7 @@ export default function PartNumbersConfig() {
                     <TrashIcon className="h-4 w-4" />
                   </button>
                 </div>
-                  <p className="text-sm text-blue-300 mt-3">
+                  <p className="text-sm text-gray-600 mt-3">
                   <span className="text-neutral-400">{partCount}</span> {t('partConfig.partsAssigned')}
                 </p>
               </div>
@@ -501,7 +501,7 @@ export default function PartNumbersConfig() {
                 handleAddLine(name);
               }
             }}
-            className="flex items-center justify-center bg-blue-900 border-2 border-dashed border-blue-700 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-800/50 transition-colors cursor-pointer"
+            className="flex items-center justify-center bg-blue-900 border-2 border-dashed border-blue-700 rounded-lg p-4 hover:border-blue-500 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <PlusIcon className="h-5 w-5 text-neutral-400 mr-2" />
             <span className="text-neutral-400">{t('partConfig.addLine')}</span>

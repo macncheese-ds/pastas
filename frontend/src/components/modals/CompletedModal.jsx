@@ -48,7 +48,7 @@ export default function CompletedModal({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">
               <span className="text-neutral-400">{t('pasteDetails.did')}</span>
-              <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
+              <span className="ml-2 font-medium text-gray-500">{paste.did}</span>
             </div>
             <div>
               <span className="text-neutral-400">{t('pasteDetails.lot')}</span>

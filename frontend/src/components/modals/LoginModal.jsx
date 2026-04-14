@@ -59,8 +59,8 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
       showCloseButton={!busy}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-lg bg-blue-900/30 p-4 border border-blue-800">
-          <p className="text-sm text-blue-300">
+        <div className="rounded-lg bg-white p-4 border border-blue-800">
+          <p className="text-sm text-gray-600">
             {t('login.hint')}
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
             placeholder="Ej: 1A, 123B"
             autoComplete="username"
             disabled={busy}
-            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -96,7 +96,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
             placeholder="••••••••"
             autoComplete="current-password"
             disabled={busy}
-            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 

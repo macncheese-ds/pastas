@@ -89,14 +89,14 @@ export default function ViscosityModal({
       <div className="space-y-6">
         {/* Inherited value banner */}
         {isInherited && (
-          <div className="rounded-lg bg-blue-900/30 border border-blue-600 p-4">
+          <div className="rounded-lg bg-white border border-blue-600 p-4">
             <div className="flex items-start">
-              <InformationCircleIcon className="h-5 w-5 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
+              <InformationCircleIcon className="h-5 w-5 text-gray-500 mr-2 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-blue-300">
+                <p className="text-sm font-medium text-gray-600">
                   {t('viscosityModal.autoApplied')}
                 </p>
-                <p className="text-sm text-blue-400 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   {t('viscosityModal.autoAppliedDesc', {
                     value: inheritedValue,
                     lot: paste.lot_number,
@@ -106,8 +106,8 @@ export default function ViscosityModal({
             </div>
             <div className="mt-4 flex items-center justify-center">
               <div className="text-center">
-                <p className="text-xs text-blue-400 mb-1">{t('viscosityModal.measuredValue')}</p>
-                <p className="text-4xl font-bold text-blue-300">{inheritedValue}</p>
+                <p className="text-xs text-gray-500 mb-1">{t('viscosityModal.measuredValue')}</p>
+                <p className="text-4xl font-bold text-gray-600">{inheritedValue}</p>
                 <p className="text-xs text-green-400 mt-1">
                   <CheckCircleIcon className="h-4 w-4 inline mr-1" />
                   {t('viscosityModal.validRange')}: 170 - 230
@@ -137,7 +137,7 @@ export default function ViscosityModal({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">
               <span className="text-neutral-400">{t('pasteDetails.did')}</span>
-              <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
+              <span className="ml-2 font-medium text-gray-500">{paste.did}</span>
             </div>
             <div>
               <span className="text-neutral-400">{t('viscosityModal.lot')}</span>
@@ -160,7 +160,7 @@ export default function ViscosityModal({
             <div className="flex items-center justify-center">
               <div className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  <BeakerIcon className="h-8 w-8 text-blue-400" />
+                  <BeakerIcon className="h-8 w-8 text-gray-500" />
                 </div>
                 <p className="text-sm text-neutral-400">{t('viscosityModal.validRange')}</p>
                 <p className="text-2xl font-bold text-white">170 - 230</p>
@@ -221,7 +221,7 @@ export default function ViscosityModal({
           <button
             onClick={handleSubmit}
             disabled={isLoading || !isValidValue}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-black bg-white border border-gray-300 border border-transparent rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>

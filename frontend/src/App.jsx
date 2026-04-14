@@ -208,7 +208,7 @@ export default function App() {
                 <span className="user-chip">
                   {sidebarCollapsed
                     ? authenticatedUser.nombre?.charAt(0)
-                    : `${authenticatedUser.nombre} (${authenticatedUser.rol})`}
+                      : `${authenticatedUser.num_empleado} - ${authenticatedUser.nombre} (${authenticatedUser.rol})`}
                 </span>
                 <button onClick={handleLogout} className="nav-link sidebar-logout-btn">
                   <span className="nav-icon">
@@ -236,28 +236,28 @@ export default function App() {
                   <h3 className="text-sm font-medium text-white mb-2">{t('settings.viscosityRange')}</h3>
                   <div className="flex items-center space-x-4">
                     <div>
-                      <label className="block text-xs text-blue-300/60">{t('settings.minimum')}</label>
+                      <label className="block text-xs text-gray-600/60">{t('settings.minimum')}</label>
                       <input type="number" defaultValue={150} disabled
-                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-blue-950/40 text-white shadow-sm text-sm" />
+                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-white text-white shadow-sm text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs text-blue-300/60">{t('settings.maximum')}</label>
+                      <label className="block text-xs text-gray-600/60">{t('settings.maximum')}</label>
                       <input type="number" defaultValue={180} disabled
-                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-blue-950/40 text-white shadow-sm text-sm" />
+                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-white text-white shadow-sm text-sm" />
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-blue-300/50">{t('settings.viscosityNote')}</p>
+                  <p className="mt-2 text-xs text-gray-600/50">{t('settings.viscosityNote')}</p>
                 </div>
                 <div className="border-b border-blue-900/40 pb-6">
                   <h3 className="text-sm font-medium text-white mb-2">{t('settings.database')}</h3>
-                  <p className="text-sm text-blue-200/70">{t('settings.databaseNote')}</p>
+                  <p className="text-sm text-gray-800/70">{t('settings.databaseNote')}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-white mb-2">{t('settings.qrFormat')}</h3>
-                  <div className="bg-blue-950/40 rounded-lg p-4 text-sm font-mono text-blue-200/80">
+                  <div className="bg-white rounded-lg p-4 text-sm font-mono text-gray-800/80">
                     <p className="mb-2">{t('settings.expectedFormat')}</p>
-                    <p className="text-blue-400">lote,parte,expiración,fabricación,serial</p>
-                    <p className="mt-2 text-blue-300/50">{t('settings.example')}</p>
+                    <p className="text-gray-500">lote,parte,expiración,fabricación,serial</p>
+                    <p className="mt-2 text-gray-600/50">{t('settings.example')}</p>
                     <p className="text-green-400">50822985,k01.005-00m-2,260218,250909,017</p>
                   </div>
                 </div>

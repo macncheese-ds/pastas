@@ -262,20 +262,20 @@ export default function ReportsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
-          <ChartBarIcon className="h-7 w-7 text-blue-400 mr-3" />
+          <ChartBarIcon className="h-7 w-7 text-gray-500 mr-3" />
           <div>
-            <h2 className="text-2xl font-bold text-white">{t('reports.title')}</h2>
-            <p className="text-sm text-blue-400">{t('reports.subtitle')}</p>
+            <h2 className="text-2xl font-bold text-black">{t('reports.title')}</h2>
+            <p className="text-sm text-gray-500">{t('reports.subtitle')}</p>
           </div>
         </div>
         
         <div className="flex items-center space-x-3">
           <div className="flex items-center bg-blue-900 rounded-lg p-1 border border-blue-800">
-            <CalendarIcon className="h-4 w-4 text-blue-400 ml-2 mr-1" />
+            <CalendarIcon className="h-4 w-4 text-gray-500 ml-2 mr-1" />
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="bg-transparent text-sm text-blue-300 border-0 focus:ring-0 pr-8 cursor-pointer"
+              className="bg-transparent text-sm text-gray-600 border-0 focus:ring-0 pr-8 cursor-pointer"
             >
               <option value="today">{t('reports.today')}</option>
               <option value="week">{t('reports.lastWeek')}</option>
@@ -286,16 +286,16 @@ export default function ReportsTab() {
           
           <button
             onClick={handleExport}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
-            {t('reports.exportExcel') || 'Export Excel'}
+            {t('table.exportExcel')}
           </button>
           
           <button
             onClick={fetchPastes}
             disabled={isLoading}
-            className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-300 bg-blue-800 border border-blue-700 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 bg-blue-800 border border-blue-700 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className={`h-4 w-4 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
             Actualizar
@@ -306,17 +306,17 @@ export default function ReportsTab() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Total Pastes */}
-        <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-blue-700/50 rounded-xl p-5">
+        <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 border border-gray-300 rounded-xl p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-blue-300 uppercase tracking-wide font-medium">{t('reports.totalRegistered')}</p>
-              <p className="text-3xl font-bold text-white mt-1">{stats.total}</p>
+              <p className="text-xs text-gray-600 uppercase tracking-wide font-medium">{t('reports.totalRegistered')}</p>
+              <p className="text-3xl font-bold text-black mt-1">{stats.total}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-              <CubeIcon className="h-6 w-6 text-blue-400" />
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+              <CubeIcon className="h-6 w-6 text-gray-500" />
             </div>
           </div>
-          <div className="mt-3 flex items-center text-xs text-blue-300">
+          <div className="mt-3 flex items-center text-xs text-gray-600">
             <span>{stats.inProcess} {t('reports.inProcess')}</span>
           </div>
         </div>
@@ -326,7 +326,7 @@ export default function ReportsTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-green-300 uppercase tracking-wide font-medium">{t('reports.successRate')}</p>
-              <p className="text-3xl font-bold text-white mt-1">{stats.efficiencyRate}%</p>
+              <p className="text-3xl font-bold text-black mt-1">{stats.efficiencyRate}%</p>
             </div>
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
               <CheckCircleIcon className="h-6 w-6 text-green-400" />
@@ -347,7 +347,7 @@ export default function ReportsTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-red-300 uppercase tracking-wide font-medium">{t('reports.rejectionRate')}</p>
-              <p className="text-3xl font-bold text-white mt-1">{stats.rejectionRate}%</p>
+              <p className="text-3xl font-bold text-black mt-1">{stats.rejectionRate}%</p>
             </div>
             <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
               <XCircleIcon className="h-6 w-6 text-red-400" />
@@ -363,7 +363,7 @@ export default function ReportsTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-cyan-300 uppercase tracking-wide font-medium">{t('reports.inFridge')}</p>
-              <p className="text-3xl font-bold text-white mt-1">{stats.inFridge}</p>
+              <p className="text-3xl font-bold text-black mt-1">{stats.inFridge}</p>
             </div>
             <div className="w-12 h-12 bg-cyan-500/20 rounded-full flex items-center justify-center">
               <BeakerIcon className="h-6 w-6 text-cyan-400" />
@@ -381,7 +381,7 @@ export default function ReportsTab() {
         <div className="lg:col-span-2 space-y-6">
           {/* Status Flow */}
           <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <h3 className="text-lg font-semibold text-black mb-4 flex items-center">
               <TableCellsIcon className="h-5 w-5 mr-2 text-purple-400" />
               {t('reports.statusFlow')}
             </h3>
@@ -395,12 +395,12 @@ export default function ReportsTab() {
                 
                 return (
                   <div key={status} className="text-center">
-                    <div className="bg-blue-800/50 rounded-lg p-3 hover:bg-blue-800 transition-colors">
+                    <div className="bg-gray-100 rounded-lg p-3 hover:bg-blue-800 transition-colors">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}>
                         {label.split(' ')[0]}
                       </span>
-                      <p className="text-2xl font-bold text-white mt-2">{count}</p>
-                      <p className="text-xs text-blue-400">{percentage}%</p>
+                      <p className="text-2xl font-bold text-black mt-2">{count}</p>
+                      <p className="text-xs text-gray-500">{percentage}%</p>
                     </div>
                   </div>
                 );
@@ -410,8 +410,8 @@ export default function ReportsTab() {
 
           {/* Daily Trend Chart */}
           <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-blue-400" />
+            <h3 className="text-lg font-semibold text-black mb-4 flex items-center">
+              <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-gray-500" />
               {t('reports.weeklyTrend')}
             </h3>
             <div className="flex items-end justify-between h-40 gap-2">
@@ -434,28 +434,28 @@ export default function ReportsTab() {
                     />
                     {/* Total bar (remaining) */}
                     <div 
-                      className="w-full bg-blue-500/60 rounded-b transition-all duration-300"
+                      className="w-full bg-white rounded-b transition-all duration-300"
                       style={{ height: `${((day.total - day.completed - day.rejected) / maxDaily) * 100}%`, minHeight: (day.total - day.completed - day.rejected) > 0 ? '4px' : '0' }}
                       title={`${day.total - day.completed - day.rejected} en proceso`}
                     />
                   </div>
                   <p className="text-xs text-neutral-400 mt-2">{day.date}</p>
-                  <p className="text-sm font-semibold text-white">{day.total}</p>
+                  <p className="text-sm font-semibold text-black">{day.total}</p>
                 </div>
               ))}
             </div>
             <div className="flex justify-center gap-6 mt-4 text-xs">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-blue-500/60 rounded" />
-                <span className="text-blue-400">{t('reports.inProcessLabel')}</span>
+                <div className="w-3 h-3 bg-white rounded" />
+                <span className="text-gray-500">{t('reports.inProcessLabel')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-green-500/60 rounded" />
-                <span className="text-blue-400">{t('reports.completedLabel')}</span>
+                <span className="text-gray-500">{t('reports.completedLabel')}</span>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-red-500/60 rounded" />
-                <span className="text-blue-400">{t('reports.rejectedLabel')}</span>
+                <span className="text-gray-500">{t('reports.rejectedLabel')}</span>
               </div>
             </div>
           </div>
@@ -465,20 +465,20 @@ export default function ReportsTab() {
         <div className="space-y-6">
           {/* Time Statistics */}
           <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <h3 className="text-lg font-semibold text-black mb-4 flex items-center">
               <ClockIcon className="h-5 w-5 mr-2 text-amber-400" />
               {t('reports.avgTimes')}
             </h3>
             <div className="space-y-4">
-              <div className="bg-blue-800/50 rounded-lg p-4">
+              <div className="bg-gray-100 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-blue-300">{t('reports.timeInFridge')}</span>
-                  <span className="text-lg font-bold text-blue-300">{avgTimes.fridgeTime}</span>
+                  <span className="text-sm text-gray-600">{t('reports.timeInFridge')}</span>
+                  <span className="text-lg font-bold text-gray-600">{avgTimes.fridgeTime}</span>
                 </div>
               </div>
-              <div className="bg-blue-800/50 rounded-lg p-4">
+              <div className="bg-gray-100 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-blue-300">{t('reports.waitTime4h')}</span>
+                  <span className="text-sm text-gray-600">{t('reports.waitTime4h')}</span>
                   <span className={`text-lg font-bold ${avgTimes.waitTimeCompliant === false ? 'text-red-300' : avgTimes.waitTimeCompliant ? 'text-green-300' : 'text-amber-300'}`}>
                     {avgTimes.waitTime}
                   </span>
@@ -490,9 +490,9 @@ export default function ReportsTab() {
                   </p>
                 )}
               </div>
-              <div className="bg-blue-800/50 rounded-lg p-4">
+              <div className="bg-gray-100 rounded-lg p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-blue-300">{t('reports.fullProcess')}</span>
+                  <span className="text-sm text-gray-600">{t('reports.fullProcess')}</span>
                   <span className="text-lg font-bold text-purple-300">{avgTimes.totalProcess}</span>
                 </div>
               </div>
@@ -502,27 +502,27 @@ export default function ReportsTab() {
           {/* Viscosity Stats */}
           {viscosityStats && (
             <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-black mb-4 flex items-center">
                 <BeakerIcon className="h-5 w-5 mr-2 text-green-400" />
                 {t('reports.viscosity')}
               </h3>
               <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="bg-blue-800/50 rounded-lg p-3 text-center">
+                <div className="bg-gray-100 rounded-lg p-3 text-center">
                   <p className="text-xs text-neutral-400">{t('reports.min')}</p>
-                  <p className="text-xl font-bold text-white">{viscosityStats.min}</p>
+                  <p className="text-xl font-bold text-black">{viscosityStats.min}</p>
                 </div>
-                <div className="bg-blue-800/50 rounded-lg p-3 text-center">
+                <div className="bg-gray-100 rounded-lg p-3 text-center">
                   <p className="text-xs text-neutral-400">{t('reports.average')}</p>
                   <p className="text-xl font-bold text-green-300">{viscosityStats.avg}</p>
                 </div>
-                <div className="bg-blue-800/50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-blue-400">{t('reports.min')}</p>
-                  <p className="text-xl font-bold text-white">{viscosityStats.max}</p>
+                <div className="bg-gray-100 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-500">{t('reports.min')}</p>
+                  <p className="text-xl font-bold text-black">{viscosityStats.max}</p>
                 </div>
               </div>
-              <div className="bg-blue-800/50 rounded-lg p-3">
+              <div className="bg-gray-100 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-blue-300">{t('reports.inRange')}</span>
+                  <span className="text-sm text-gray-600">{t('reports.inRange')}</span>
                   <span className="text-sm font-bold text-green-300">{viscosityStats.complianceRate}%</span>
                 </div>
                 <div className="w-full bg-blue-700 rounded-full h-2">
@@ -545,15 +545,15 @@ export default function ReportsTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* SMT Line Distribution */}
         <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
-          <h3 className="text-lg font-semibold text-white mb-4">{t('reports.smtDistribution')}</h3>
+          <h3 className="text-lg font-semibold text-black mb-4">{t('reports.smtDistribution')}</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {Object.entries(smtDistribution)
               .sort((a, b) => b[1] - a[1])
               .map(([smt, count]) => {
                 const percentage = stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0;
                 return (
-                <div className="flex items-center justify-between p-3 bg-blue-700/50 rounded-lg hover:bg-blue-700 transition-colors">
-                    <span className="text-sm font-medium text-white">{smt}</span>
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <span className="text-sm font-medium text-black">{smt}</span>
                     <div className="flex items-center gap-3">
                       <div className="w-24 bg-blue-600 rounded-full h-2">
                         <div 
@@ -571,7 +571,7 @@ export default function ReportsTab() {
 
         {/* Part Number Distribution */}
         <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
-          <h3 className="text-lg font-semibold text-white mb-4">{t('reports.topPartNumbers')}</h3>
+          <h3 className="text-lg font-semibold text-black mb-4">{t('reports.topPartNumbers')}</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {Object.entries(partNumberDistribution)
               .sort((a, b) => b[1] - a[1])
@@ -579,8 +579,8 @@ export default function ReportsTab() {
               .map(([pn, count]) => {
                 const percentage = stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0;
                 return (
-                <div className="flex items-center justify-between p-3 bg-blue-700/50 rounded-lg hover:bg-blue-700 transition-colors">
-                    <span className="text-sm font-medium text-white font-mono">{pn}</span>
+                <div className="flex items-center justify-between p-3 bg-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <span className="text-sm font-medium text-black font-mono">{pn}</span>
                     <div className="flex items-center gap-3">
                       <div className="w-24 bg-blue-600 rounded-full h-2">
                         <div 
@@ -588,7 +588,7 @@ export default function ReportsTab() {
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span className="text-sm font-bold text-blue-300 w-12 text-right">{count}</span>
+                      <span className="text-sm font-bold text-gray-600 w-12 text-right">{count}</span>
                     </div>
                   </div>
                 );
@@ -599,36 +599,36 @@ export default function ReportsTab() {
 
       {/* Recent Activity */}
       <div className="bg-blue-900 rounded-xl p-6 border border-blue-800">
-        <h3 className="text-lg font-semibold text-white mb-4">{t('reports.recentActivity')}</h3>
+        <h3 className="text-lg font-semibold text-black mb-4">{t('reports.recentActivity')}</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-blue-800">
-                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.did')}</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.lot')}</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.part')}</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.line')}</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.status')}</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.viscosity')}</th>
-                <th className="text-left py-2 px-3 text-xs font-medium text-blue-400 uppercase">{t('reports.tableHeaders.entry')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">{t('reports.tableHeaders.did')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">{t('reports.tableHeaders.lot')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">{t('reports.tableHeaders.part')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">{t('reports.tableHeaders.line')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">{t('reports.tableHeaders.status')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">{t('reports.tableHeaders.viscosity')}</th>
+                <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">{t('reports.tableHeaders.entry')}</th>
               </tr>
             </thead>
             <tbody>
               {recentActivity.map((paste) => (
-                <tr key={paste.id} className="border-b border-blue-800/50 hover:bg-blue-900/30 transition-colors">
-                  <td className="py-3 px-3 text-sm text-white font-mono">{paste.did || '-'}</td>
-                  <td className="py-3 px-3 text-sm text-blue-300">{paste.lot_number}</td>
-                  <td className="py-3 px-3 text-sm text-blue-300 font-mono">{paste.part_number}</td>
-                  <td className="py-3 px-3 text-sm text-blue-300">{paste.smt_location || '-'}</td>
+                <tr key={paste.id} className="border-b border-blue-800/50 hover:bg-white transition-colors">
+                  <td className="py-3 px-3 text-sm text-black font-mono">{paste.did || '-'}</td>
+                  <td className="py-3 px-3 text-sm text-gray-600">{paste.lot_number}</td>
+                  <td className="py-3 px-3 text-sm text-gray-600 font-mono">{paste.part_number}</td>
+                  <td className="py-3 px-3 text-sm text-gray-600">{paste.smt_location || '-'}</td>
                   <td className="py-3 px-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[paste.status]}`}>
                       {t('status.' + paste.status)}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-sm text-blue-300">
+                  <td className="py-3 px-3 text-sm text-gray-600">
                     {paste.viscosity_value || '-'}
                   </td>
-                  <td className="py-3 px-3 text-sm text-blue-400">
+                  <td className="py-3 px-3 text-sm text-gray-500">
                     {paste.fridge_in_datetime ? new Date(paste.fridge_in_datetime).toLocaleString('es-MX', { 
                       day: '2-digit', 
                       month: '2-digit',

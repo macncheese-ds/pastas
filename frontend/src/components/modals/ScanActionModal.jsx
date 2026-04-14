@@ -60,7 +60,7 @@ export default function ScanActionModal({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">
               <span className="text-neutral-400">{t('pasteDetails.did')}</span>
-              <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
+              <span className="ml-2 font-medium text-gray-500">{paste.did}</span>
             </div>
             <div>
               <span className="text-neutral-400">{t('pasteDetails.lot')}</span>
@@ -97,7 +97,7 @@ export default function ScanActionModal({
           <ArrowRightIcon className="h-5 w-5 text-neutral-500" />
           <div className="text-center">
             <p className="text-xs text-neutral-400 mb-1">{t('scanAction.nextStatus')}</p>
-            <span className="inline-flex items-center rounded-full bg-blue-900/50 px-2.5 py-1 text-sm font-medium text-blue-300">
+            <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-sm font-medium text-gray-600">
               {t('nextActions.' + paste.status + '.title')}
             </span>
           </div>

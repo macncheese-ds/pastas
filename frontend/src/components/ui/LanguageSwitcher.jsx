@@ -30,15 +30,15 @@ export default function LanguageSwitcher({ collapsed = false }) {
 
   return (
     <div className="flex items-center gap-1 px-2">
-      <GlobeAltIcon className="h-4 w-4 text-blue-300 flex-shrink-0" />
+      <GlobeAltIcon className="h-4 w-4 text-gray-600 flex-shrink-0" />
       {langs.map((lang) => (
         <button
           key={lang}
           onClick={() => setLanguage(lang)}
           className={`px-2 py-1 text-xs rounded transition-colors ${
             language === lang
-              ? 'bg-blue-500/30 text-blue-200 font-bold'
-              : 'text-blue-400/60 hover:text-blue-300 hover:bg-white/5'
+              ? 'bg-white text-gray-800 font-bold'
+              : 'text-gray-500/60 hover:text-gray-600 hover:bg-white/5'
           }`}
           title={t('language.' + lang)}
         >

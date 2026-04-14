@@ -391,53 +391,91 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // ⚠️ MANDATORY VALIDATION: Part number must be registered and have line assignments
+    const partNumberCheck = await query(
+      `SELECT id FROM part_numbers WHERE UPPER(part_number) = ? AND is_active = TRUE`,
+      [upperPartNumber]
+    );
+
+    if (partNumberCheck.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: `AUDITORÍA FALLIDA: El número de parte "${upperPartNumber}" NO está registrado en el sistema.\n\nDebe configurar este número de parte en ajustes antes de registrar pastas.\n\nContacte a un Ingeniero o Administrador.`,
+        data: {
+          auditError: true,
+          unregisteredPartNumber: true,
+          partNumber: upperPartNumber
+        },
+      });
+    }
+
+    const partNumberId = partNumberCheck[0].id;
+
+    // Check if part number has at least one valid line assignment
+    const assignmentCount = await query(
+      `SELECT COUNT(*) as count FROM part_line_assignments 
+       WHERE part_number_id = ? AND is_valid = TRUE`,
+      [partNumberId]
+    );
+
+    if (assignmentCount[0].count === 0) {
+      const validLines = await query(
+        `SELECT pl.line_number, pl.line_name
+         FROM production_lines pl WHERE pl.is_active = TRUE
+         ORDER BY pl.line_number`
+      );
+
+      return res.status(400).json({
+        success: false,
+        error: `AUDITORÍA FALLIDA: El número de parte "${upperPartNumber}" NO tiene líneas de producción asignadas.\n\nDebe asignar al menos una línea (${validLines.map(l => l.line_name).join(', ')}) a este número de parte en ajustes.\n\nContacte a un Ingeniero o Administrador.`,
+        data: {
+          auditError: true,
+          noLineAssignments: true,
+          partNumber: upperPartNumber,
+          availableLines: validLines
+        },
+      });
+    }
+
     // Validate part-line assignment if smt_location is provided
     if (upperSmtLocation) {
       const smtToLineMap = { 'SMT': 1, 'SMT2': 2, 'SMT3': 3, 'SMT4': 4 };
       const lineNumber = smtToLineMap[upperSmtLocation];
 
       if (lineNumber) {
-        const partNumberRecord = await query(
-          `SELECT id FROM part_numbers WHERE UPPER(part_number) = ? AND is_active = TRUE`,
-          [upperPartNumber]
+        // We already verified partNumberId exists above
+        const productionLine = await query(
+          `SELECT id, line_name FROM production_lines WHERE line_number = ? AND is_active = TRUE`,
+          [lineNumber]
         );
 
-        if (partNumberRecord.length > 0) {
-          const partNumberId = partNumberRecord[0].id;
+        if (productionLine.length > 0) {
+          const productionLineId = productionLine[0].id;
+          const lineName = productionLine[0].line_name;
 
-          const productionLine = await query(
-            `SELECT id, line_name FROM production_lines WHERE line_number = ? AND is_active = TRUE`,
-            [lineNumber]
+          const assignment = await query(
+            `SELECT id FROM part_line_assignments WHERE part_number_id = ? AND production_line_id = ? AND is_valid = TRUE`,
+            [partNumberId, productionLineId]
           );
 
-          if (productionLine.length > 0) {
-            const productionLineId = productionLine[0].id;
-            const lineName = productionLine[0].line_name;
-
-            const assignment = await query(
-              `SELECT id FROM part_line_assignments WHERE part_number_id = ? AND production_line_id = ? AND is_valid = TRUE`,
-              [partNumberId, productionLineId]
+          if (assignment.length === 0) {
+            const validLines = await query(
+              `SELECT pl.line_number, pl.line_name
+               FROM part_line_assignments pla
+               JOIN production_lines pl ON pla.production_line_id = pl.id
+               WHERE pla.part_number_id = ? AND pla.is_valid = TRUE AND pl.is_active = TRUE
+               ORDER BY pl.line_number`,
+              [partNumberId]
             );
 
-            if (assignment.length === 0) {
-              const validLines = await query(
-                `SELECT pl.line_number, pl.line_name
-                 FROM part_line_assignments pla
-                 JOIN production_lines pl ON pla.production_line_id = pl.id
-                 WHERE pla.part_number_id = ? AND pla.is_valid = TRUE AND pl.is_active = TRUE
-                 ORDER BY pl.line_number`,
-                [partNumberId]
-              );
+            const validLinesText = validLines.length > 0
+              ? `Líneas autorizadas: ${validLines.map(l => l.line_name).join(', ')}`
+              : 'No hay líneas autorizadas para este número de parte';
 
-              const validLinesText = validLines.length > 0
-                ? `Líneas autorizadas: ${validLines.map(l => l.line_name).join(', ')}`
-                : 'No hay líneas autorizadas para este número de parte';
-
-              return res.status(400).json({
-                success: false,
-                error: `El número de parte ${upperPartNumber} NO está autorizado para ${lineName}. ${validLinesText}`,
-              });
-            }
+            return res.status(400).json({
+              success: false,
+              error: `El número de parte ${upperPartNumber} NO está autorizado para ${lineName}. ${validLinesText}`,
+            });
           }
         }
       }
@@ -830,6 +868,43 @@ router.post('/:id/scan', async (req, res) => {
             success: false,
             error: fefoCheckFridge.message,
             data: { fefoViolation: true },
+          });
+        }
+
+        // ⚠️ CRITICAL VALIDATION: Verify part number is registered and has line assignments
+        const partNumberRecord = await query(
+          `SELECT id FROM part_numbers WHERE UPPER(part_number) = ? AND is_active = TRUE`,
+          [paste.part_number.trim().toUpperCase()]
+        );
+
+        if (partNumberRecord.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: `AUDITORÍA FALLIDA: El número de parte "${paste.part_number}" NO está registrado en el sistema.\n\nLa pasta no puede ser procesada sin que el número de parte esté configurado en ajustes.\n\nContacte a un Ingeniero o Administrador para registrar este número de parte.`,
+            data: {
+              auditError: true,
+              unregisteredPartNumber: true,
+              partNumber: paste.part_number
+            },
+          });
+        }
+
+        // Verify the part number has at least one valid line assignment
+        const lineAssignments = await query(
+          `SELECT COUNT(*) as count FROM part_line_assignments 
+           WHERE part_number_id = ? AND is_valid = TRUE`,
+          [partNumberRecord[0].id]
+        );
+
+        if (lineAssignments[0].count === 0) {
+          return res.status(400).json({
+            success: false,
+            error: `AUDITORÍA FALLIDA: El número de parte "${paste.part_number}" NO tiene líneas de producción asignadas.\n\nLa pasta no puede ser procesada sin asignaciones válidas de línea.\n\nContacte a un Ingeniero o Administrador para asignar líneas a este número de parte en ajustes.`,
+            data: {
+              auditError: true,
+              noLineAssignments: true,
+              partNumber: paste.part_number
+            },
           });
         }
 

@@ -772,19 +772,19 @@ export default function FridgeInTab({ smtLocation }) {
   return (
     <div className="space-y-6">
       {/* Scanner Section */}
-      <div className="bg-[#0f1d33] rounded-lg p-6 border border-blue-900/40">
+      <div className="bg-[#0f1d33] rounded-lg p-6 border border-gray-300">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-white">{t('scanner.title')}</h2>
           <button
             onClick={() => setShowManualEntryModal(true)}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-200/70 bg-blue-950/50 border border-blue-800/40 rounded-md hover:bg-blue-900/40 transition-colors"
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-800/70 bg-white border border-gray-300 rounded-md hover:bg-white transition-colors"
           >
             <PlusIcon className="h-4 w-4 mr-1.5" />
             {t('scanner.manualEntry')}
           </button>
         </div>
         <QRScannerInput onScan={handleScan} />
-        <p className="mt-2 text-xs text-blue-300/40">
+        <p className="mt-2 text-xs text-gray-600/40">
           {t('scanner.hint')}
         </p>
       </div>
@@ -792,14 +792,14 @@ export default function FridgeInTab({ smtLocation }) {
       {/* Error Modal */}
       {error && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#0f1d33] rounded-lg p-6 w-full max-w-sm border border-blue-900/40 text-center">
+          <div className="bg-[#0f1d33] rounded-lg p-6 w-full max-w-sm border border-gray-300 text-center">
             <div className="flex justify-center mb-4">
               <div className="w-12 h-12 bg-red-900/40 rounded-full flex items-center justify-center">
                 <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
               </div>
             </div>
             <h3 className="text-lg font-semibold text-white mb-3">{t('errors.generic')}</h3>
-            <p className="text-sm text-blue-200/70 mb-6 whitespace-pre-wrap">{error}</p>
+            <p className="text-sm text-gray-800/70 mb-6 whitespace-pre-wrap">{error}</p>
             <button
               onClick={() => setError(null)}
               className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
@@ -811,12 +811,12 @@ export default function FridgeInTab({ smtLocation }) {
       )}
 
       {/* Pastes Table */}
-      <div className="bg-[#0f1d33] rounded-lg border border-blue-900/40">
+      <div className="bg-[#0f1d33] rounded-lg border border-gray-300">
         <div className="flex items-center justify-between p-4 border-b border-blue-900/40">
           <h2 className="text-lg font-semibold text-white">
             {t('table.title')}
             {smtLocation && (
-              <span className="ml-2 text-sm font-normal text-blue-400">
+              <span className="ml-2 text-sm font-normal text-gray-500">
                 ({smtLocation})
               </span>
             )}
@@ -824,7 +824,7 @@ export default function FridgeInTab({ smtLocation }) {
           <button
             onClick={fetchPastes}
             disabled={isLoading}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-200/70 bg-blue-950/50 border border-blue-800/40 rounded-md hover:bg-blue-900/40 transition-colors disabled:opacity-50"
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-800/70 bg-white border border-gray-300 rounded-md hover:bg-white transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className={`h-4 w-4 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
             {t('table.refresh')}

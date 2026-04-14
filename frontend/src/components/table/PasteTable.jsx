@@ -96,11 +96,11 @@ export default function PasteTable({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <svg className="animate-spin h-8 w-8 text-blue-400" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin h-8 w-8 text-gray-500" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
         </svg>
-        <span className="ml-3 text-blue-300/50">{t('table.loading')}</span>
+        <span className="ml-3 text-gray-600/50">{t('table.loading')}</span>
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default function PasteTable({
       <div className="p-4">
         <div className="text-center py-12">
           <svg
-            className="mx-auto h-12 w-12 text-blue-400/30"
+            className="mx-auto h-12 w-12 text-gray-500/30"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -122,8 +122,8 @@ export default function PasteTable({
               d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-white">{t('table.noRecords')}</h3>
-          <p className="mt-1 text-sm text-blue-300/50">
+          <h3 className="mt-2 text-sm font-medium text-black">{t('table.noRecords')}</h3>
+          <p className="mt-1 text-sm text-gray-600/50">
             {t('table.noRecordsHint')}
           </p>
         </div>
@@ -138,13 +138,13 @@ export default function PasteTable({
         <div className="flex flex-wrap items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[200px]">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300/40" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600/40" />
             <input
               type="text"
               placeholder={t('table.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-blue-950/40 border border-blue-800/40 rounded-lg text-sm text-white placeholder-blue-300/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-black placeholder-gray-400/30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -152,7 +152,7 @@ export default function PasteTable({
           <select
             value={filterPartNumber}
             onChange={(e) => setFilterPartNumber(e.target.value)}
-            className="px-3 py-2 bg-blue-950/40 border border-blue-800/40 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">{t('table.allPartNumbers')}</option>
             {partNumbers.map(pn => (
@@ -164,7 +164,7 @@ export default function PasteTable({
           <select
             value={filterSmtLocation}
             onChange={(e) => setFilterSmtLocation(e.target.value)}
-            className="px-3 py-2 bg-blue-950/40 border border-blue-800/40 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">{t('table.allSmtLines')}</option>
             {smtLocations.map(loc => (
@@ -176,7 +176,7 @@ export default function PasteTable({
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-200/70 bg-blue-950/40 rounded-lg hover:bg-blue-900/40 transition-colors"
+              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-800/70 bg-white rounded-lg hover:bg-white transition-colors"
             >
               <XMarkIcon className="h-4 w-4 mr-1" />
               {t('table.clear')}
@@ -186,7 +186,7 @@ export default function PasteTable({
           {/* Export Button */}
           <button
             onClick={handleExportExcel}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-black bg-white border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
             {t('table.exportExcel')}
@@ -195,7 +195,7 @@ export default function PasteTable({
 
         {/* Results count */}
         {hasActiveFilters && (
-          <div className="text-sm text-blue-300/50">
+          <div className="text-sm text-gray-600/50">
             {t('table.showing')} {filteredPastes.length} {t('table.of')} {pastes.length} {t('table.records')}
           </div>
         )}
@@ -203,14 +203,14 @@ export default function PasteTable({
       
       {filteredPastes.length === 0 ? (
         <div className="text-center py-12">
-          <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-blue-400/30" />
-          <h3 className="mt-2 text-sm font-medium text-white">{t('table.noResults')}</h3>
-          <p className="mt-1 text-sm text-blue-300/50">
+          <MagnifyingGlassIcon className="mx-auto h-12 w-12 text-gray-500/30" />
+          <h3 className="mt-2 text-sm font-medium text-black">{t('table.noResults')}</h3>
+          <p className="mt-1 text-sm text-gray-600/50">
             {t('table.noResultsHint')}
           </p>
           <button
             onClick={clearFilters}
-            className="mt-4 inline-flex items-center px-3 py-2 text-sm font-medium text-blue-400 hover:text-blue-300"
+            className="mt-4 inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-600"
           >
             {t('table.clearFilters')}
           </button>
@@ -220,17 +220,17 @@ export default function PasteTable({
         <table className="min-w-full divide-y divide-blue-900/40">
           <thead className="bg-[#0a1628]">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.did')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.lotSerial')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.partNumber')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.expiration')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.smtLine')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.status')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.waitTime')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.shelfLife')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.fridgeEntry')}</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.viscosity')}</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-blue-300/60 uppercase tracking-wider">{t('table.actions')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.did')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.lotSerial')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.partNumber')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.expiration')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.smtLine')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.status')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.waitTime')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.shelfLife')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.fridgeEntry')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.viscosity')}</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-600/60 uppercase tracking-wider">{t('table.actions')}</th>
             </tr>
           </thead>
           <tbody className="bg-[#0f1d33] divide-y divide-blue-900/30">
@@ -250,24 +250,24 @@ export default function PasteTable({
                   ? 'bg-orange-900/20 hover:bg-orange-900/30 border-l-2 border-orange-500'
                   : isExpired && !hasDeviation && !isFinished
                     ? 'bg-red-900/10 hover:bg-red-900/20' 
-                    : 'hover:bg-blue-900/20';
+                    : 'hover:bg-white';
 
               return (
               <tr key={paste.id} className={rowBgClass}>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-blue-400">{paste.did}</div>
+                  <div className="text-sm font-medium text-gray-500">{paste.did}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-medium text-white">{paste.lot_number}</div>
-                    <div className="text-sm text-blue-300/50">{t('table.serial')}: {paste.lot_serial}</div>
+                    <div className="text-sm font-medium text-black">{paste.lot_number}</div>
+                    <div className="text-sm text-gray-600/50">{t('table.serial')}: {paste.lot_serial}</div>
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-blue-100/80">{paste.part_number}</div>
+                  <div className="text-sm text-gray-700">{paste.part_number}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className={`text-sm font-medium ${isExpired && !isFinished ? 'text-red-400' : 'text-white'}`}>
+                  <div className={`text-sm font-medium ${isExpired && !isFinished ? 'text-red-400' : 'text-black'}`}>
                     {formatDate(paste.expiration_date)}
                     {isExpired && !isFinished && (
                       <span className="ml-1 text-xs text-red-500 font-bold">⚠ {t('table.expired')}</span>
@@ -276,11 +276,11 @@ export default function PasteTable({
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   {paste.smt_location ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900/40 text-blue-300">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white text-gray-600">
                       {paste.smt_location}
                     </span>
                   ) : (
-                    <span className="text-sm text-blue-300/30">-</span>
+                    <span className="text-sm text-gray-600/30">-</span>
                   )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
@@ -290,14 +290,14 @@ export default function PasteTable({
                   {paste.status === 'out_fridge' && paste.fridge_out_datetime ? (
                     <WaitTimeCounter fridgeOutDatetime={paste.fridge_out_datetime} compact />
                   ) : (
-                    <span className="text-sm text-blue-300/30">-</span>
+                    <span className="text-sm text-gray-600/30">-</span>
                   )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <ShelfLifeIndicator expirationDate={paste.expiration_date} compact />
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm text-blue-300/50">
+                  <div className="text-sm text-gray-600/50">
                     {formatDateTime(paste.fridge_in_datetime)}
                   </div>
                 </td>
@@ -309,14 +309,14 @@ export default function PasteTable({
                       {paste.viscosity_value}
                     </span>
                   ) : (
-                    <span className="text-sm text-blue-300/30">-</span>
+                    <span className="text-sm text-gray-600/30">-</span>
                   )}
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap text-center">
                   <div className="flex items-center justify-center space-x-2">
                     <button
                       onClick={() => onAction(paste, 'view')}
-                      className="p-1 text-blue-300/50 hover:text-blue-400 transition-colors"
+                      className="p-1 text-gray-600/50 hover:text-gray-500 transition-colors"
                       title={t('table.viewDetails')}
                     >
                       <EyeIcon className="h-5 w-5" />
@@ -324,7 +324,7 @@ export default function PasteTable({
                     {paste.status === 'in_fridge' && (
                       <button
                         onClick={() => onAction(paste, 'editDid')}
-                        className="p-1 text-blue-300/50 hover:text-yellow-400 transition-colors"
+                        className="p-1 text-gray-600/50 hover:text-yellow-400 transition-colors"
                         title={t('table.editDid')}
                       >
                         <PencilIcon className="h-5 w-5" />
@@ -333,7 +333,7 @@ export default function PasteTable({
                     {onAction && !isFinished && (
                       <button
                         onClick={() => onAction(paste, 'scan')}
-                        className={`px-3 py-1 text-xs font-medium text-white rounded transition-colors ${
+                        className={`px-3 py-1 text-xs font-medium text-black rounded transition-colors ${
                           isExpired && !hasDeviation
                             ? 'bg-amber-600 hover:bg-amber-700'
                             : 'bg-blue-600 hover:bg-blue-700'

@@ -102,7 +102,7 @@ export default function EditDidModal({
             disabled={isSubmitting}
           />
           <p className="mt-1 text-xs text-neutral-400">
-            {t('editDid.currentDid')} <span className="text-blue-400 font-medium">{paste.did}</span>
+            {t('editDid.currentDid')} <span className="text-gray-500 font-medium">{paste.did}</span>
           </p>
         </div>
 

@@ -151,10 +151,10 @@ export default function AmbientacionExceededModal({
     if (canContinue) {
       return {
         borderClass: 'border-blue-500',
-        bgClass: 'bg-blue-900/40',
-        iconClass: 'text-blue-400',
-        titleClass: 'text-blue-300',
-        textClass: 'text-blue-200',
+        bgClass: 'bg-white',
+        iconClass: 'text-gray-500',
+        titleClass: 'text-gray-600',
+        textClass: 'text-gray-800',
         title: t('ambientacion.ready'),
         subtitle: t('ambientacion.readyDesc'),
       };
@@ -200,7 +200,7 @@ export default function AmbientacionExceededModal({
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <span className="text-neutral-400">{t('pasteDetails.did')}</span>
-              <span className="ml-2 font-medium text-blue-400">{paste.did}</span>
+              <span className="ml-2 font-medium text-gray-500">{paste.did}</span>
             </div>
             <div>
               <span className="text-neutral-400">{t('pasteDetails.lot')}</span>
@@ -230,12 +230,12 @@ export default function AmbientacionExceededModal({
             <div
               onClick={() => setAction('continue')}
               className={`relative flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${action === 'continue'
-                  ? 'border-blue-500 bg-blue-900/20'
+                  ? 'border-blue-500 bg-white'
                   : 'border-neutral-700 bg-neutral-800 hover:border-blue-600'
                 }`}
             >
               <div className="flex-1">
-                <h4 className="text-sm font-semibold text-blue-400">{t('ambientacion.continueToMix')}</h4>
+                <h4 className="text-sm font-semibold text-gray-500">{t('ambientacion.continueToMix')}</h4>
                 <p className="text-xs text-neutral-400 mt-1">{t('ambientacion.continueToMixDesc')}</p>
               </div>
               <div className={`flex-shrink-0 h-5 w-5 rounded-full border-2 ${action === 'continue' ? 'border-blue-500 bg-blue-500' : 'border-neutral-500'}`} />
@@ -310,7 +310,7 @@ export default function AmbientacionExceededModal({
                   onChange={(e) => setEmployeeInput(e.target.value)}
                   placeholder="Ej: 1A, 123B"
                   disabled={busy || !action}
-                  className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                  className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                 />
               </div>
 
@@ -326,7 +326,7 @@ export default function AmbientacionExceededModal({
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     disabled={busy}
-                    className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                    className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
                   />
                 </div>
               )}
@@ -354,7 +354,7 @@ export default function AmbientacionExceededModal({
               className={`flex-1 px-4 py-2.5 ${action === 'continue'
                   ? 'bg-blue-600 hover:bg-blue-700'
                   : action === 'return'
-                    ? 'bg-green-600 hover:bg-green-700'
+                    ? 'bg-green-600 hover:bg-gray-200'
                     : 'bg-orange-600 hover:bg-orange-700'
                 } text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center`}
             >
