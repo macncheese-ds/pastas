@@ -16,7 +16,7 @@ export default function Tabs({ tabs, activeTab, onChange }) {
               group inline-flex items-center border-b-2 px-1 py-4 text-sm font-medium
               ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-gray-500'
+                  ? 'border-blue-500 text-zinc-400'
                   : 'border-transparent text-neutral-400 hover:border-neutral-500 hover:text-neutral-300'
               }
             `}
@@ -24,7 +24,7 @@ export default function Tabs({ tabs, activeTab, onChange }) {
             {tab.icon && (
               <span
                 className={`mr-2 ${
-                  activeTab === tab.id ? 'text-gray-500' : 'text-neutral-500 group-hover:text-neutral-400'
+                  activeTab === tab.id ? 'text-zinc-400' : 'text-neutral-500 group-hover:text-neutral-400'
                 }`}
               >
                 {tab.icon}

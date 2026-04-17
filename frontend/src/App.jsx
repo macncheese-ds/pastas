@@ -129,7 +129,7 @@ export default function App() {
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
         {/* Brand */}
         <div className="sidebar-brand">
-          <CpuChipIcon className="brand-icon" style={{ color: '#3b82f6' }} />
+          <CpuChipIcon className="brand-icon text-deadtimes-accent" />
           <span className="brand-text">
             <span className="brand-title">{t('app.brandTitle')}</span>
             <span className="brand-subtitle">{t('app.brandSubtitle')}</span>
@@ -232,32 +232,32 @@ export default function App() {
             <div className="card">
               <h2 className="text-lg font-semibold text-white mb-4">{t('settings.title')}</h2>
               <div className="space-y-6">
-                <div className="border-b border-blue-900/40 pb-6">
+                <div className="border-b border-deadtimes-border pb-6">
                   <h3 className="text-sm font-medium text-white mb-2">{t('settings.viscosityRange')}</h3>
                   <div className="flex items-center space-x-4">
                     <div>
-                      <label className="block text-xs text-gray-600/60">{t('settings.minimum')}</label>
+                      <label className="block text-xs text-zinc-400">{t('settings.minimum')}</label>
                       <input type="number" defaultValue={150} disabled
-                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-white text-white shadow-sm text-sm" />
+                        className="mt-1 block w-24 rounded-md border-deadtimes-border bg-deadtimes-card text-white shadow-sm text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600/60">{t('settings.maximum')}</label>
+                      <label className="block text-xs text-zinc-400">{t('settings.maximum')}</label>
                       <input type="number" defaultValue={180} disabled
-                        className="mt-1 block w-24 rounded-md border-blue-800/50 bg-white text-white shadow-sm text-sm" />
+                        className="mt-1 block w-24 rounded-md border-deadtimes-border bg-deadtimes-card text-white shadow-sm text-sm" />
                     </div>
                   </div>
-                  <p className="mt-2 text-xs text-gray-600/50">{t('settings.viscosityNote')}</p>
+                  <p className="mt-2 text-xs text-zinc-500">{t('settings.viscosityNote')}</p>
                 </div>
-                <div className="border-b border-blue-900/40 pb-6">
+                <div className="border-b border-deadtimes-border pb-6">
                   <h3 className="text-sm font-medium text-white mb-2">{t('settings.database')}</h3>
-                  <p className="text-sm text-gray-800/70">{t('settings.databaseNote')}</p>
+                  <p className="text-sm text-zinc-400">{t('settings.databaseNote')}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-white mb-2">{t('settings.qrFormat')}</h3>
-                  <div className="bg-white rounded-lg p-4 text-sm font-mono text-gray-800/80">
+                  <div className="bg-deadtimes-card border border-deadtimes-border rounded-lg p-4 text-sm font-mono text-zinc-300">
                     <p className="mb-2">{t('settings.expectedFormat')}</p>
-                    <p className="text-gray-500">lote,parte,expiración,fabricación,serial</p>
-                    <p className="mt-2 text-gray-600/50">{t('settings.example')}</p>
+                    <p className="text-zinc-500">lote,parte,expiración,fabricación,serial</p>
+                    <p className="mt-2 text-zinc-500/70">{t('settings.example')}</p>
                     <p className="text-green-400">50822985,k01.005-00m-2,260218,250909,017</p>
                   </div>
                 </div>

@@ -58,7 +58,7 @@ export default function OpenPasteModal({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="col-span-2">
               <span className="text-neutral-400">{t('pasteDetails.did')}</span>
-              <span className="ml-2 font-medium text-gray-500">{paste.did}</span>
+              <span className="ml-2 font-medium text-zinc-400">{paste.did}</span>
             </div>
             <div>
               <span className="text-neutral-400">{t('pasteDetails.lot')}</span>
@@ -98,7 +98,7 @@ export default function OpenPasteModal({
                   onClick={() => setSelectedSmt(line.line_name)}
                   className={`p-3 rounded-lg border-2 transition-all text-left ${
                     selectedSmt === line.line_name
-                      ? 'border-blue-500 bg-white text-gray-600'
+                      ? 'border-blue-500 bg-deadtimes-card text-zinc-400'
                       : 'border-neutral-600 bg-neutral-700 text-neutral-300 hover:border-neutral-500'
                   }`}
                 >

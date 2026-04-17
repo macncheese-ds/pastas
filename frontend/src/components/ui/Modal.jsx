@@ -54,15 +54,15 @@ export default function Modal({
 
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className={`relative ${sizeClasses[size]} w-full transform overflow-hidden rounded-lg bg-[#0f1d33] border border-gray-300 shadow-xl transition-all`}
+          className={`relative ${sizeClasses[size]} w-full transform overflow-hidden rounded-lg bg-deadtimes-card border border-deadtimes-border shadow-xl transition-all`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between border-b border-blue-900/40 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-deadtimes-border px-6 py-4">
             <h3 className="text-lg font-semibold text-white">{title}</h3>
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="rounded-md p-1 text-gray-600/50 hover:bg-white hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="rounded-md p-1 text-zinc-400 hover:bg-deadtimes-card hover:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>

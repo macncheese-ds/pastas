@@ -59,8 +59,8 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
       showCloseButton={!busy}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-lg bg-white p-4 border border-blue-800">
-          <p className="text-sm text-gray-600">
+        <div className="rounded-lg bg-deadtimes-card p-4 border border-deadtimes-border">
+          <p className="text-sm text-zinc-400">
             {t('login.hint')}
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
             placeholder="Ej: 1A, 123B"
             autoComplete="username"
             disabled={busy}
-            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -96,7 +96,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
             placeholder="••••••••"
             autoComplete="current-password"
             disabled={busy}
-            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2.5 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -113,7 +113,7 @@ export default function LoginModal({ visible, defaultEmployee = '', onClose, onC
           <button 
             type="submit" 
             disabled={busy}
-            className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-neutral-800"
+            className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-deadtimes-hover text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-neutral-800"
           >
             {busy ? t('login.verifying') : t('login.submit')}
           </button>

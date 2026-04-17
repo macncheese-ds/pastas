@@ -133,7 +133,7 @@ export default function QRScannerInput({
         <QrCodeIcon
           className={`h-5 w-5 ${
             isScanning 
-              ? 'animate-pulse text-gray-500' 
+              ? 'animate-pulse text-zinc-400' 
               : 'text-green-400'
           }`}
         />
@@ -152,18 +152,18 @@ export default function QRScannerInput({
         spellCheck={false}
         className={`
           block w-full rounded-lg border py-3 pl-10 pr-4
-          text-black placeholder-gray-400/40 shadow-sm
+          text-white placeholder-gray-400/40 shadow-sm
           focus:outline-none focus:ring-2
-          disabled:cursor-not-allowed disabled:bg-white disabled:text-gray-600/30
+          disabled:cursor-not-allowed disabled:bg-deadtimes-card disabled:text-zinc-400
           ${isScanning 
-            ? 'border-blue-500 ring-2 ring-blue-500/30 bg-white' 
-            : 'border-blue-700/50 bg-white ring-1 ring-blue-500/10'
+            ? 'border-blue-500 ring-2 ring-blue-500/30 bg-deadtimes-card' 
+            : 'border-deadtimes-border bg-deadtimes-card ring-1 ring-blue-500/10'
           }
         `}
       />
       {isScanning && (
         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-          <span className="text-xs text-gray-500 animate-pulse">{t('scanner.scanning')}</span>
+          <span className="text-xs text-zinc-400 animate-pulse">{t('scanner.scanning')}</span>
         </div>
       )}
     </div>

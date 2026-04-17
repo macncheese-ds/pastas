@@ -24,43 +24,43 @@ function useTabs() {
 
 const TAB_COLORS = {
   blue: {
-    active: 'border-blue-500 text-gray-500',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
-    badge: 'bg-white text-gray-600',
+    active: 'border-blue-500 text-zinc-400',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
+    badge: 'bg-deadtimes-card text-zinc-400',
   },
   cyan: {
     active: 'border-cyan-500 text-cyan-400',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
     badge: 'bg-cyan-900/50 text-cyan-300',
   },
   yellow: {
     active: 'border-yellow-500 text-yellow-400',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
     badge: 'bg-yellow-900/50 text-yellow-300',
   },
   orange: {
     active: 'border-orange-500 text-orange-400',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
     badge: 'bg-orange-900/50 text-orange-300',
   },
   green: {
     active: 'border-green-500 text-green-400',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
     badge: 'bg-green-900/50 text-green-300',
   },
   purple: {
     active: 'border-purple-500 text-purple-400',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
     badge: 'bg-purple-900/50 text-purple-300',
   },
   gray: {
-    active: 'border-gray-500 text-gray-400',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
+    active: 'border-gray-500 text-zinc-400',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
     badge: 'bg-gray-900/50 text-gray-300',
   },
   red: {
     active: 'border-red-500 text-red-400',
-    inactive: 'border-transparent text-gray-600/40 hover:text-gray-600/70 hover:border-blue-800/50',
+    inactive: 'border-transparent text-zinc-400 hover:text-zinc-400 hover:border-deadtimes-border',
     badge: 'bg-red-900/50 text-red-300',
   },
 };
@@ -93,7 +93,7 @@ export default function PasteTableWithTabs({
 
   return (
     <div>
-      <div className="border-b border-blue-900/40">
+      <div className="border-b border-deadtimes-border">
         <nav className="flex overflow-x-auto px-4" aria-label="Tabs">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -111,7 +111,7 @@ export default function PasteTableWithTabs({
               >
                 {tab.label}
                 {count > 0 && (
-                  <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-medium ${isActive ? colors.badge : 'bg-white text-gray-600/40'}`}>
+                  <span className={`ml-2 py-0.5 px-2 rounded-full text-xs font-medium ${isActive ? colors.badge : 'bg-deadtimes-card text-zinc-400'}`}>
                     {count}
                   </span>
                 )}

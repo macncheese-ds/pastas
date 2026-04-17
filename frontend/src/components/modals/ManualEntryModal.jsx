@@ -115,8 +115,8 @@ export default function ManualEntryModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('manualEntryModal.title')} size="lg">
       <div className="space-y-6">
-        <div className="rounded-lg bg-white p-4 border border-blue-800">
-          <p className="text-sm text-gray-600">
+        <div className="rounded-lg bg-deadtimes-card p-4 border border-deadtimes-border">
+          <p className="text-sm text-zinc-400">
             {t('manualEntryModal.hint')}
           </p>
         </div>
@@ -257,7 +257,7 @@ export default function ManualEntryModal({
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-deadtimes-hover focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             {isLoading ? (
               <>

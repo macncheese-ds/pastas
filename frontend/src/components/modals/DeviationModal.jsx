@@ -166,7 +166,7 @@ export default function DeviationModal({
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <span className="text-neutral-400">{t('pasteDetails.did')}</span>
-              <span className="ml-2 font-medium text-gray-500">{paste.did}</span>
+              <span className="ml-2 font-medium text-zinc-400">{paste.did}</span>
             </div>
             <div>
               <span className="text-neutral-400">{t('pasteDetails.lot')}</span>
@@ -199,8 +199,8 @@ export default function DeviationModal({
         {/* Authorization Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="border-b border-neutral-700 pb-4">
-            <div className="bg-white border-l-4 border-blue-500 pl-3 py-2 mb-3">
-              <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wide">{t('deviation.step1')}</h4>
+            <div className="bg-deadtimes-card border-l-4 border-blue-500 pl-3 py-2 mb-3">
+              <h4 className="text-sm font-bold text-zinc-400 uppercase tracking-wide">{t('deviation.step1')}</h4>
             </div>
             <div>
               <label className="flex items-center text-sm font-medium text-neutral-300 mb-1.5">
@@ -213,7 +213,7 @@ export default function DeviationModal({
                 onChange={(e) => setEmployeeCalidad(e.target.value)}
                 placeholder="Ej: 1A, 123B"
                 disabled={busy}
-                className="block w-full rounded-md border border-blue-600 bg-neutral-700 px-3 py-2 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                className="block w-full rounded-md border border-blue-600 bg-neutral-700 px-3 py-2 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
               />
             </div>
 
@@ -227,7 +227,7 @@ export default function DeviationModal({
                 onChange={(e) => setPasswordCalidad(e.target.value)}
                 placeholder="••••••••"
                 disabled={busy}
-                className="block w-full rounded-md border border-blue-600 bg-neutral-700 px-3 py-2 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+                className="block w-full rounded-md border border-blue-600 bg-neutral-700 px-3 py-2 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
               />
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function DeviationModal({
                 onChange={(e) => setEmployeeIngeniero(e.target.value)}
                 placeholder="Ej: 1A, 123B"
                 disabled={busy}
-                className="block w-full rounded-md border border-green-600 bg-neutral-700 px-3 py-2 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50"
+                className="block w-full rounded-md border border-green-600 bg-neutral-700 px-3 py-2 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50"
               />
             </div>
 
@@ -260,7 +260,7 @@ export default function DeviationModal({
                 onChange={(e) => setPasswordIngeniero(e.target.value)}
                 placeholder="••••••••"
                 disabled={busy}
-                className="block w-full rounded-md border border-green-600 bg-neutral-700 px-3 py-2 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50"
+                className="block w-full rounded-md border border-green-600 bg-neutral-700 px-3 py-2 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50"
               />
             </div>
           </div>
@@ -275,7 +275,7 @@ export default function DeviationModal({
               placeholder={t('deviation.reasonPlaceholder')}
               rows={3}
               disabled={busy}
-              className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:opacity-50 resize-none"
+              className="block w-full rounded-md border border-neutral-600 bg-neutral-700 px-3 py-2 text-sm text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 disabled:opacity-50 resize-none"
             />
           </div>
 

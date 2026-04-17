@@ -7,23 +7,23 @@
    Matching Deadtimes design system
    ═══════════════════════════════════════════════════════ */
 :root {
-  --primary: #2a2a2a;     /* gray-800 */
-  --primary-light: #3a3a3a; /* gray-700 */
-  --accent: #404040;      /* gray-700 */
-  --accent-hover: #303030;
-  --accent-soft: rgba(64, 64, 64, 0.15);
-  --success: #404040;     /* gray-700 */
-  --danger: #555555;      /* gray-600 */
-  --warning: #505050;     /* gray-600 */
-  --bg: #1a1a1a;          /* gray-900 */
-  --bg-elevated: #252525; /* gray-800 */
-  --card: #252525;        /* gray-800 */
-  --card-soft: #303030;   /* gray-700 */
-  --border: #404040;      /* gray-600 */
-  --text: #ffffff;        /* white */
-  --text-muted: #a0a0a0;  /* gray-500 */
-  --focus: rgba(64, 64, 64, 0.3);
-  --table-head: #1a1a1a;  /* gray-900 */
+  --primary: #1A1A1E;     /* Deadtimes card */
+  --primary-light: #2D2D33; /* Deadtimes border */
+  --accent: #00a8ff;      /* Cyan */
+  --accent-hover: #0ea5e9;
+  --accent-soft: rgba(0, 168, 255, 0.15);
+  --success: #10b981;     /* Emerald */
+  --danger: #ef4444;      /* Red */
+  --warning: #f59e0b;     /* Amber */
+  --bg: #0F0F13;          /* Very Dark Gray/Black */
+  --bg-elevated: #161618; /* Sidebar BG */
+  --card: #1A1A1E;        /* Standard Card BG */
+  --card-soft: #202026;   /* Slightly lighter card */
+  --border: #2D2D33;      /* Standard Border */
+  --text: #ffffff;        /* White text */
+  --text-muted: #A1A1AA;  /* Zinc 400 */
+  --focus: rgba(0, 168, 255, 0.3);
+  --table-head: #121216;
   --sidebar-w: 260px;
   --sidebar-collapsed-w: 68px;
   --header-h: 60px;
