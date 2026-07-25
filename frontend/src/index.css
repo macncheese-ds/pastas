@@ -63,7 +63,8 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 15px;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -440,6 +441,7 @@ thead th {
 tbody td {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
+  color: var(--text);
 }
 
 tbody tr:hover {
@@ -477,7 +479,9 @@ tbody tr:hover {
 }
 
 .toolbar h2 {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
 }
 
 .search-box {

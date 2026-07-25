@@ -34,10 +34,13 @@ import {
 
 export default function FridgeInTab({ smtLocation }) {
   const { t } = useLanguage();
-  // Data state
-  const [pastes, setPastes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // refreshKey is incremented after each scan action to trigger table re-fetch
+  const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState(null);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshKey(k => k + 1);
+  }, []);
 
   // Modal states
   const [showNewPasteModal, setShowNewPasteModal] = useState(false);
@@ -67,29 +70,24 @@ export default function FridgeInTab({ smtLocation }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
 
-  // Fetch pastes
-  const fetchPastes = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const url = smtLocation
-        ? `/api/pastes?smt_location=${encodeURIComponent(smtLocation)}`
-        : '/api/pastes';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(t('errors.loadPastes'));
-      const result = await response.json();
-      // Handle both wrapped and direct array responses
-      setPastes(result.data || result);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [smtLocation]);
+  // Fetch pastes — only used for the QR scan modal flow (checking existing pastes)
+  // The table itself fetches its own data per-tab via PasteTableWithTabs
+  const fetchPasteByLot = useCallback(async (lotNumber, lotSerial) => {
+    const url = `/api/pastes?lot_number=${encodeURIComponent(lotNumber)}&lot_serial=${encodeURIComponent(lotSerial)}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(t('errors.loadPastes'));
+    const result = await response.json();
+    return result.data || null;
+  }, [t]);
 
-  useEffect(() => {
-    fetchPastes();
-  }, [fetchPastes]);
+  const fetchPasteByDid = useCallback(async (did) => {
+    const url = `/api/pastes?did=${encodeURIComponent(did)}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(t('errors.loadPastes'));
+    const result = await response.json();
+    const items = result.data || result;
+    return Array.isArray(items) ? items[0] || null : items;
+  }, [t]);
 
   // Fetch authorized lines for a part number
   const fetchAuthorizedLines = async (partNumber) => {
@@ -308,7 +306,7 @@ export default function FridgeInTab({ smtLocation }) {
 
         setShowNewPasteModal(false);
         setParsedQRData(null);
-        fetchPastes();
+        triggerRefresh();
       } catch (err) {
         // Close all modals and show error
         setShowScanActionModal(false);
@@ -371,7 +369,7 @@ export default function FridgeInTab({ smtLocation }) {
         }
 
         setShowManualEntryModal(false);
-        fetchPastes();
+        triggerRefresh();
       } catch (err) {
         // Close all modals and show error
         setShowScanActionModal(false);
@@ -441,7 +439,7 @@ export default function FridgeInTab({ smtLocation }) {
 
         setShowScanActionModal(false);
         setSelectedPaste(null);
-        fetchPastes();
+        triggerRefresh();
       } catch (err) {
         // Close all modals and show error
         setShowScanActionModal(false);
@@ -535,7 +533,7 @@ export default function FridgeInTab({ smtLocation }) {
 
         setShowViscosityModal(false);
         setSelectedPaste(null);
-        fetchPastes();
+        triggerRefresh();
       } catch (err) {
         setShowScanActionModal(false);
         setShowViscosityModal(false);
@@ -596,7 +594,7 @@ export default function FridgeInTab({ smtLocation }) {
 
         setShowOpenPasteModal(false);
         setSelectedPaste(null);
-        fetchPastes();
+        triggerRefresh();
       } catch (err) {
         setShowScanActionModal(false);
         setShowViscosityModal(false);
@@ -635,7 +633,7 @@ export default function FridgeInTab({ smtLocation }) {
 
         setShowCompletedModal(false);
         setSelectedPaste(null);
-        fetchPastes();
+        triggerRefresh();
       } catch (err) {
         // Close all modals and show error
         setShowScanActionModal(false);
@@ -657,7 +655,7 @@ export default function FridgeInTab({ smtLocation }) {
       setIsProcessing(true);
       const result = await updatePasteDid(pasteId, newDid);
       if (result.success) {
-        await fetchPastes();
+        triggerRefresh();
         setShowEditDidModal(false);
         setSelectedPaste(null);
       }
@@ -725,7 +723,7 @@ export default function FridgeInTab({ smtLocation }) {
     setIsDeviationForNewPaste(false);
     setParsedQRData(null);
     // Refresh paste data and retry pending action
-    await fetchPastes();
+    triggerRefresh();
 
     if (pendingDeviationAction) {
       const action = pendingDeviationAction;
@@ -750,7 +748,7 @@ export default function FridgeInTab({ smtLocation }) {
     setShowAmbientacionModal(false);
     setSelectedPaste(null);
     setAmbientacionHours(0);
-    await fetchPastes();
+    triggerRefresh();
   };
 
   // Handle paste returned to fridge
@@ -758,7 +756,7 @@ export default function FridgeInTab({ smtLocation }) {
     setShowAmbientacionModal(false);
     setSelectedPaste(null);
     setAmbientacionHours(0);
-    await fetchPastes();
+    triggerRefresh();
   };
 
   // Handle continue to mixing from ambientacion modal
@@ -822,19 +820,17 @@ export default function FridgeInTab({ smtLocation }) {
             )}
           </h2>
           <button
-            onClick={fetchPastes}
-            disabled={isLoading}
-            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-deadtimes-card border border-deadtimes-border rounded-md hover:bg-deadtimes-card transition-colors disabled:opacity-50"
+            onClick={triggerRefresh}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-deadtimes-card border border-deadtimes-border rounded-md hover:bg-deadtimes-card transition-colors"
           >
-            <ArrowPathIcon className={`h-4 w-4 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <ArrowPathIcon className="h-4 w-4 mr-1.5" />
             {t('table.refresh')}
           </button>
         </div>
 
         <PasteTableWithTabs
-          pastes={pastes}
-          isLoading={isLoading}
           onAction={handleTableAction}
+          refreshKey={refreshKey}
         />
       </div>
 

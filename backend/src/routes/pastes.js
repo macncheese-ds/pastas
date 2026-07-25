@@ -108,74 +108,115 @@ async function checkFEFOForStatus(pasteId, expirationDate, partNumber, statusToC
 
 /**
  * GET /api/pastes
- * Get all pastes or search by lot_number + lot_serial, or by DID, or by smt_location
+ * Supports query params:
+ *   did, lot_number+lot_serial  - exact lookups (unchanged)
+ *   status                      - filter by single status  e.g. status=in_fridge
+ *   status_in                   - filter by multiple statuses (comma-separated) e.g. status_in=mixing,rejected
+ *   include_removed             - if 'true', include removed/discarded rows (default: active only)
+ *   smt_location                - filter by SMT line
+ *   sort                        - 'fefo' (expiry ASC, created ASC) | 'newest' (fridge_in DESC) | 'removed_desc' (removed_datetime DESC, fridge_in DESC)
+ *   limit / offset              - pagination
  */
 router.get('/', async (req, res) => {
   try {
-    const { lot_number, lot_serial, did, smt_location } = req.query;
+    const {
+      lot_number, lot_serial, did, smt_location,
+      status, status_in, include_removed,
+      sort = 'fefo',
+      limit, offset,
+    } = req.query;
 
-    // Search by DID (Document Identification)
+    // ── Exact lookups (unchanged behaviour) ────────────────────────────
     if (did) {
       const results = await query(
         `SELECT * FROM solder_paste WHERE did = ?`,
         [did]
       );
-
       if (results.length === 0) {
-        return res.json({
-          success: true,
-          data: [],
-          message: 'Pasta no encontrada',
-        });
+        return res.json({ success: true, data: [], message: 'Pasta no encontrada' });
       }
-
-      return res.json({
-        success: true,
-        data: results,
-      });
+      return res.json({ success: true, data: results });
     }
 
-    // Search by lot_number and lot_serial
-    // FEFO/FIFO: Return the paste with earliest expiration date, or earliest creation if same expiration
     if (lot_number && lot_serial) {
       const results = await query(
-        `SELECT * FROM solder_paste 
+        `SELECT * FROM solder_paste
          WHERE lot_number = ? AND lot_serial = ?
          ORDER BY expiration_date ASC, created_at ASC
          LIMIT 1`,
         [lot_number, lot_serial]
       );
-
       if (results.length === 0) {
-        return res.json({
-          success: true,
-          data: null,
-          message: 'Pasta no encontrada',
-        });
+        return res.json({ success: true, data: null, message: 'Pasta no encontrada' });
       }
-
-      return res.json({
-        success: true,
-        data: results[0],
-      });
+      return res.json({ success: true, data: results[0] });
     }
 
-    // Filter by smt_location if provided
-    let query_string = `SELECT * FROM solder_paste`;
-    let params = [];
+    // ── Dynamic list query ─────────────────────────────────────────────
+    const conditions = [];
+    const params = [];
 
+    // SMT location filter
     if (smt_location) {
-      query_string += ` WHERE smt_location = ?`;
-      params = [smt_location];
+      conditions.push('smt_location = ?');
+      params.push(smt_location);
     }
 
-    query_string += ` ORDER BY expiration_date ASC, created_at ASC`;
+    // Single status filter
+    if (status) {
+      conditions.push('status = ?');
+      params.push(status);
+    }
+
+    // Multi-status filter (comma-separated)
+    if (status_in && !status) {
+      const statuses = status_in.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        conditions.push('status = ?');
+        params.push(statuses[0]);
+      } else if (statuses.length > 1) {
+        conditions.push(`status IN (${statuses.map(() => '?').join(',')})`);
+        params.push(...statuses);
+      }
+    }
+
+    // include_removed=true → show everything; default → exclude removed/discarded
+    if (include_removed !== 'true' && !status && !status_in) {
+      // No status filter supplied and not asking for all: show active pastes only
+      // (skip this when a status filter is already narrowing results)
+    }
+    // If neither status nor status_in is set and include_removed is not true,
+    // we return everything (backward compat for the scanner dashboard which needs all active statuses)
+
+    let query_string = `SELECT * FROM solder_paste`;
+    if (conditions.length > 0) {
+      query_string += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    // Sort order
+    if (sort === 'removed_desc') {
+      query_string += ` ORDER BY removed_datetime DESC, fridge_in_datetime DESC`;
+    } else if (sort === 'newest') {
+      query_string += ` ORDER BY fridge_in_datetime DESC, created_at DESC`;
+    } else {
+      // default: fefo
+      query_string += ` ORDER BY expiration_date ASC, created_at ASC`;
+    }
+
+    // Pagination
+    const limitVal = limit ? parseInt(limit, 10) : null;
+    const offsetVal = offset ? parseInt(offset, 10) : 0;
+    if (limitVal && limitVal > 0) {
+      query_string += ` LIMIT ? OFFSET ?`;
+      params.push(limitVal, offsetVal);
+    }
 
     const results = await query(query_string, params);
 
     res.json({
       success: true,
       data: results,
+      meta: { count: results.length, limit: limitVal, offset: offsetVal },
     });
   } catch (error) {
     console.error('Error fetching pastes:', error);
@@ -185,6 +226,7 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
 
 /**
  * GET /api/pastes/export/excel

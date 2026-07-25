@@ -16,6 +16,7 @@ export default function PasteTable({
   pastes,
   onAction,
   isLoading = false,
+  preserveSort = false,  // when true, skip internal FEFO sort (API already sorted)
 }) {
   const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,38 +34,37 @@ export default function PasteTable({
     return unique.sort();
   }, [pastes]);
 
-  // Filter pastes based on search and filters, then sort by FEFO/FIFO
+  // Filter pastes — sort only when NOT preserving API order
   const filteredPastes = useMemo(() => {
     const filtered = pastes.filter(paste => {
-      // Search term filter (DID, lot_number, lot_serial)
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           paste.did?.toLowerCase().includes(search) ||
           paste.lot_number?.toLowerCase().includes(search) ||
           paste.lot_serial?.toLowerCase().includes(search);
         if (!matchesSearch) return false;
       }
-      // Part number filter
       if (filterPartNumber && paste.part_number !== filterPartNumber) return false;
-      // SMT location filter
       if (filterSmtLocation && paste.smt_location !== filterSmtLocation) return false;
       return true;
     });
 
-    // Sort by FEFO/FIFO: earliest expiration first, then earliest creation
+    if (preserveSort) {
+      // API already sorted — don't disturb the order
+      return filtered;
+    }
+
+    // FEFO/FIFO for active-status tabs
     return filtered.sort((a, b) => {
-      // First sort by expiration date (FEFO)
       const expA = new Date(a.expiration_date).getTime();
       const expB = new Date(b.expiration_date).getTime();
       if (expA !== expB) return expA - expB;
-      
-      // If same expiration, sort by creation date (FIFO)
       const createdA = new Date(a.fridge_in_datetime || a.created_at).getTime();
       const createdB = new Date(b.fridge_in_datetime || b.created_at).getTime();
       return createdA - createdB;
     });
-  }, [pastes, searchTerm, filterPartNumber, filterSmtLocation]);
+  }, [pastes, searchTerm, filterPartNumber, filterSmtLocation, preserveSort]);
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -134,7 +134,7 @@ export default function PasteTable({
   return (
     <div className="space-y-4">
       {/* Filters and Export */}
-      <div className="p-4 bg-[#0a1628] rounded-lg space-y-3">
+      <div className="p-4 bg-[#202026] rounded-lg space-y-3 border border-[#2D2D33]">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[200px]">
@@ -255,7 +255,7 @@ export default function PasteTable({
               return (
               <tr key={paste.id} className={rowBgClass}>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-zinc-400">{paste.did}</div>
+                  <div className="text-sm font-medium text-white font-mono">{paste.did || '-'}</div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   <div>
@@ -276,7 +276,7 @@ export default function PasteTable({
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
                   {paste.smt_location ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-deadtimes-card text-zinc-400">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#202026] text-zinc-200 border border-[#2D2D33]">
                       {paste.smt_location}
                     </span>
                   ) : (

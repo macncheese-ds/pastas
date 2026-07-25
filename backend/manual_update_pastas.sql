@@ -13,7 +13,7 @@ USE solder_paste_db;
 SELECT 
     id,
     did,
-    lot_number,
+scm-history-item:c%3A%5CMarcelo%5Cpastas?%7B%22repositoryId%22%3A%22scm0%22%2C%22historyItemId%22%3A%22f9090290420a4d5f51bf8c05bb89fb7f89d15bb7%22%2C%22historyItemParentId%22%3A%22b328947948bd235b703bb8dc564f47a8744857ad%22%2C%22historyItemDisplayId%22%3A%22f909029%22%7D    lot_number,
     lot_serial,
     part_number,
     status,

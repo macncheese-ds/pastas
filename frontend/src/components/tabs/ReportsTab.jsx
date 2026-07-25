@@ -4,7 +4,7 @@
  * =====================================================
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { STATUS_LABELS, STATUS_COLORS } from '../../types';
 import { useLanguage } from '../../i18n';
 import {
@@ -28,11 +28,7 @@ export default function ReportsTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState('week');
 
-  useEffect(() => {
-    fetchPastes();
-  }, []);
-
-  const fetchPastes = async () => {
+  const fetchPastes = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/pastes?include_removed=true');
@@ -44,7 +40,11 @@ export default function ReportsTab() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPastes();
+  }, [fetchPastes]);
 
   // Filter pastes by date range
   const filteredPastes = useMemo(() => {
@@ -180,7 +180,7 @@ export default function ReportsTab() {
     const avg = values.reduce((a, b) => a + b, 0) / values.length;
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const inRange = values.filter(v => v >= 150 && v <= 180).length;
+    const inRange = values.filter(v => v >= 170 && v <= 230).length;
     const outOfRange = values.length - inRange;
     
     return {
@@ -262,7 +262,7 @@ export default function ReportsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center">
-          <ChartBarIcon className="h-7 w-7 text-zinc-400 mr-3" />
+          <ChartBarIcon className="h-7 w-7 text-[#00a8ff] mr-3" />
           <div>
             <h2 className="text-2xl font-bold text-white">{t('reports.title')}</h2>
             <p className="text-sm text-zinc-400">{t('reports.subtitle')}</p>
@@ -270,23 +270,23 @@ export default function ReportsTab() {
         </div>
         
         <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-deadtimes-accent rounded-lg p-1 border border-deadtimes-border">
-            <CalendarIcon className="h-4 w-4 text-zinc-400 ml-2 mr-1" />
+          <div className="flex items-center bg-[#1A1A1E] rounded-lg p-1.5 border border-[#2D2D33] gap-1">
+            <CalendarIcon className="h-4 w-4 text-zinc-400 ml-1 mr-0.5" />
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="bg-transparent text-sm text-zinc-400 border-0 focus:ring-0 pr-8 cursor-pointer"
+              className="bg-transparent text-sm text-zinc-200 border-0 focus:ring-0 pr-6 cursor-pointer outline-none"
             >
-              <option value="today">{t('reports.today')}</option>
-              <option value="week">{t('reports.lastWeek')}</option>
-              <option value="month">{t('reports.lastMonth')}</option>
-              <option value="all">{t('reports.allHistory')}</option>
+              <option value="today" className="bg-[#1A1A1E] text-white">{t('reports.today')}</option>
+              <option value="week" className="bg-[#1A1A1E] text-white">{t('reports.lastWeek')}</option>
+              <option value="month" className="bg-[#1A1A1E] text-white">{t('reports.lastMonth')}</option>
+              <option value="all" className="bg-[#1A1A1E] text-white">{t('reports.allHistory')}</option>
             </select>
           </div>
           
           <button
             onClick={handleExport}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-deadtimes-card border border-deadtimes-border rounded-lg hover:bg-deadtimes-hover transition-colors"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-[#1A1A1E] border border-[#2D2D33] rounded-lg hover:bg-[#2D2D33] transition-colors"
           >
             <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
             {t('table.exportExcel')}
@@ -295,7 +295,7 @@ export default function ReportsTab() {
           <button
             onClick={fetchPastes}
             disabled={isLoading}
-            className="inline-flex items-center px-3 py-2 text-sm font-medium text-zinc-400 bg-deadtimes-accent border border-deadtimes-border rounded-lg hover:bg-deadtimes-hover transition-colors disabled:opacity-50"
+            className="inline-flex items-center px-3 py-2 text-sm font-medium text-zinc-200 bg-[#1A1A1E] border border-[#2D2D33] rounded-lg hover:bg-[#2D2D33] transition-colors disabled:opacity-50"
           >
             <ArrowPathIcon className={`h-4 w-4 mr-1.5 ${isLoading ? 'animate-spin' : ''}`} />
             Actualizar
@@ -380,7 +380,7 @@ export default function ReportsTab() {
         {/* Status Distribution - Left Column */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status Flow */}
-          <div className="bg-deadtimes-accent rounded-xl p-6 border border-deadtimes-border">
+          <div className="bg-[#1A1A1E] rounded-xl p-6 border border-[#2D2D33]">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <TableCellsIcon className="h-5 w-5 mr-2 text-purple-400" />
               {t('reports.statusFlow')}
@@ -395,7 +395,7 @@ export default function ReportsTab() {
                 
                 return (
                   <div key={status} className="text-center">
-                    <div className="bg-gray-100 rounded-lg p-3 hover:bg-deadtimes-accent transition-colors">
+                    <div className="bg-[#202026] rounded-lg p-3 hover:bg-[#2D2D33] transition-colors border border-[#2D2D33]">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}>
                         {label.split(' ')[0]}
                       </span>
@@ -409,9 +409,9 @@ export default function ReportsTab() {
           </div>
 
           {/* Daily Trend Chart */}
-          <div className="bg-deadtimes-accent rounded-xl p-6 border border-deadtimes-border">
+          <div className="bg-[#1A1A1E] rounded-xl p-6 border border-[#2D2D33]">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-              <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-zinc-400" />
+              <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-[#00a8ff]" />
               {t('reports.weeklyTrend')}
             </h3>
             <div className="flex items-end justify-between h-40 gap-2">
@@ -428,29 +428,29 @@ export default function ReportsTab() {
                     )}
                     {/* Completed bar */}
                     <div 
-                      className="w-full bg-green-500/60 transition-all duration-300"
+                      className="w-full bg-emerald-500/70 transition-all duration-300"
                       style={{ height: `${(day.completed / maxDaily) * 100}%`, minHeight: day.completed > 0 ? '4px' : '0' }}
                       title={`${day.completed} completadas`}
                     />
                     {/* Total bar (remaining) */}
                     <div 
-                      className="w-full bg-deadtimes-card rounded-b transition-all duration-300"
+                      className="w-full bg-[#2D2D33] rounded-b transition-all duration-300"
                       style={{ height: `${((day.total - day.completed - day.rejected) / maxDaily) * 100}%`, minHeight: (day.total - day.completed - day.rejected) > 0 ? '4px' : '0' }}
                       title={`${day.total - day.completed - day.rejected} en proceso`}
                     />
                   </div>
-                  <p className="text-xs text-neutral-400 mt-2">{day.date}</p>
+                  <p className="text-xs text-zinc-400 mt-2">{day.date}</p>
                   <p className="text-sm font-semibold text-white">{day.total}</p>
                 </div>
               ))}
             </div>
             <div className="flex justify-center gap-6 mt-4 text-xs">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-deadtimes-card rounded" />
+                <div className="w-3 h-3 bg-[#2D2D33] rounded" />
                 <span className="text-zinc-400">{t('reports.inProcessLabel')}</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500/60 rounded" />
+                <div className="w-3 h-3 bg-emerald-500/70 rounded" />
                 <span className="text-zinc-400">{t('reports.completedLabel')}</span>
               </div>
               <div className="flex items-center gap-1">
@@ -464,22 +464,22 @@ export default function ReportsTab() {
         {/* Right Column */}
         <div className="space-y-6">
           {/* Time Statistics */}
-          <div className="bg-deadtimes-accent rounded-xl p-6 border border-deadtimes-border">
+          <div className="bg-[#1A1A1E] rounded-xl p-6 border border-[#2D2D33]">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
               <ClockIcon className="h-5 w-5 mr-2 text-amber-400" />
               {t('reports.avgTimes')}
             </h3>
-            <div className="space-y-4">
-              <div className="bg-gray-100 rounded-lg p-4">
+            <div className="space-y-3">
+              <div className="bg-[#202026] rounded-lg p-4 border border-[#2D2D33]">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">{t('reports.timeInFridge')}</span>
-                  <span className="text-lg font-bold text-zinc-400">{avgTimes.fridgeTime}</span>
+                  <span className="text-sm text-zinc-300">{t('reports.timeInFridge')}</span>
+                  <span className="text-lg font-bold text-white">{avgTimes.fridgeTime}</span>
                 </div>
               </div>
-              <div className="bg-gray-100 rounded-lg p-4">
+              <div className="bg-[#202026] rounded-lg p-4 border border-[#2D2D33]">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">{t('reports.waitTime4h')}</span>
-                  <span className={`text-lg font-bold ${avgTimes.waitTimeCompliant === false ? 'text-red-300' : avgTimes.waitTimeCompliant ? 'text-green-300' : 'text-amber-300'}`}>
+                  <span className="text-sm text-zinc-300">{t('reports.waitTime4h')}</span>
+                  <span className={`text-lg font-bold ${avgTimes.waitTimeCompliant === false ? 'text-red-300' : avgTimes.waitTimeCompliant ? 'text-emerald-300' : 'text-amber-300'}`}>
                     {avgTimes.waitTime}
                   </span>
                 </div>
@@ -490,9 +490,9 @@ export default function ReportsTab() {
                   </p>
                 )}
               </div>
-              <div className="bg-gray-100 rounded-lg p-4">
+              <div className="bg-[#202026] rounded-lg p-4 border border-[#2D2D33]">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">{t('reports.fullProcess')}</span>
+                  <span className="text-sm text-zinc-300">{t('reports.fullProcess')}</span>
                   <span className="text-lg font-bold text-purple-300">{avgTimes.totalProcess}</span>
                 </div>
               </div>
@@ -501,37 +501,37 @@ export default function ReportsTab() {
 
           {/* Viscosity Stats */}
           {viscosityStats && (
-            <div className="bg-deadtimes-accent rounded-xl p-6 border border-deadtimes-border">
+            <div className="bg-[#1A1A1E] rounded-xl p-6 border border-[#2D2D33]">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                <BeakerIcon className="h-5 w-5 mr-2 text-green-400" />
+                <BeakerIcon className="h-5 w-5 mr-2 text-emerald-400" />
                 {t('reports.viscosity')}
               </h3>
               <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="bg-gray-100 rounded-lg p-3 text-center">
-                  <p className="text-xs text-neutral-400">{t('reports.min')}</p>
+                <div className="bg-[#202026] rounded-lg p-3 text-center border border-[#2D2D33]">
+                  <p className="text-xs text-zinc-400 mb-1">{t('reports.min')}</p>
                   <p className="text-xl font-bold text-white">{viscosityStats.min}</p>
                 </div>
-                <div className="bg-gray-100 rounded-lg p-3 text-center">
-                  <p className="text-xs text-neutral-400">{t('reports.average')}</p>
-                  <p className="text-xl font-bold text-green-300">{viscosityStats.avg}</p>
+                <div className="bg-[#202026] rounded-lg p-3 text-center border border-[#2D2D33]">
+                  <p className="text-xs text-zinc-400 mb-1">{t('reports.average')}</p>
+                  <p className="text-xl font-bold text-emerald-300">{viscosityStats.avg}</p>
                 </div>
-                <div className="bg-gray-100 rounded-lg p-3 text-center">
-                  <p className="text-xs text-zinc-400">{t('reports.min')}</p>
+                <div className="bg-[#202026] rounded-lg p-3 text-center border border-[#2D2D33]">
+                  <p className="text-xs text-zinc-400 mb-1">Max</p>
                   <p className="text-xl font-bold text-white">{viscosityStats.max}</p>
                 </div>
               </div>
-              <div className="bg-gray-100 rounded-lg p-3">
+              <div className="bg-[#202026] rounded-lg p-3 border border-[#2D2D33]">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-zinc-400">{t('reports.inRange')}</span>
-                  <span className="text-sm font-bold text-green-300">{viscosityStats.complianceRate}%</span>
+                  <span className="text-sm text-zinc-300">{t('reports.inRange')}</span>
+                  <span className="text-sm font-bold text-emerald-300">{viscosityStats.complianceRate}%</span>
                 </div>
-                <div className="w-full bg-blue-700 rounded-full h-2">
+                <div className="w-full bg-[#0F0F13] rounded-full h-2">
                   <div 
-                    className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                    className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${viscosityStats.complianceRate}%` }}
                   />
                 </div>
-                <div className="flex justify-between mt-1 text-xs text-neutral-400">
+                <div className="flex justify-between mt-1 text-xs text-zinc-400">
                   <span>{viscosityStats.inRange} {t('reports.ok')}</span>
                   <span>{viscosityStats.outOfRange} {t('reports.outOf')}</span>
                 </div>
@@ -544,7 +544,7 @@ export default function ReportsTab() {
       {/* Bottom Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* SMT Line Distribution */}
-        <div className="bg-deadtimes-accent rounded-xl p-6 border border-deadtimes-border">
+        <div className="bg-[#1A1A1E] rounded-xl p-6 border border-[#2D2D33]">
           <h3 className="text-lg font-semibold text-white mb-4">{t('reports.smtDistribution')}</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {Object.entries(smtDistribution)
@@ -552,16 +552,16 @@ export default function ReportsTab() {
               .map(([smt, count]) => {
                 const percentage = stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0;
                 return (
-                <div className="flex items-center justify-between p-3 bg-deadtimes-card rounded-lg hover:bg-deadtimes-hover transition-colors">
+                <div key={smt} className="flex items-center justify-between p-3 bg-[#202026] rounded-lg hover:bg-[#2D2D33] transition-colors border border-[#2D2D33]">
                     <span className="text-sm font-medium text-white">{smt}</span>
                     <div className="flex items-center gap-3">
-                      <div className="w-24 bg-blue-600 rounded-full h-2">
+                      <div className="w-24 bg-[#0F0F13] rounded-full h-2">
                         <div 
-                          className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                          className="bg-violet-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span className="text-sm font-bold text-purple-300 w-12 text-right">{count}</span>
+                      <span className="text-sm font-bold text-violet-300 w-12 text-right">{count}</span>
                     </div>
                   </div>
                 );
@@ -570,7 +570,7 @@ export default function ReportsTab() {
         </div>
 
         {/* Part Number Distribution */}
-        <div className="bg-deadtimes-accent rounded-xl p-6 border border-deadtimes-border">
+        <div className="bg-[#1A1A1E] rounded-xl p-6 border border-[#2D2D33]">
           <h3 className="text-lg font-semibold text-white mb-4">{t('reports.topPartNumbers')}</h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {Object.entries(partNumberDistribution)
@@ -579,16 +579,16 @@ export default function ReportsTab() {
               .map(([pn, count]) => {
                 const percentage = stats.total > 0 ? ((count / stats.total) * 100).toFixed(0) : 0;
                 return (
-                <div className="flex items-center justify-between p-3 bg-deadtimes-card rounded-lg hover:bg-deadtimes-hover transition-colors">
+                <div key={pn} className="flex items-center justify-between p-3 bg-[#202026] rounded-lg hover:bg-[#2D2D33] transition-colors border border-[#2D2D33]">
                     <span className="text-sm font-medium text-white font-mono">{pn}</span>
                     <div className="flex items-center gap-3">
-                      <div className="w-24 bg-blue-600 rounded-full h-2">
+                      <div className="w-24 bg-[#0F0F13] rounded-full h-2">
                         <div 
-                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          className="bg-[#00a8ff] h-2 rounded-full transition-all duration-300"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span className="text-sm font-bold text-zinc-400 w-12 text-right">{count}</span>
+                      <span className="text-sm font-bold text-[#00a8ff] w-12 text-right">{count}</span>
                     </div>
                   </div>
                 );
@@ -598,12 +598,12 @@ export default function ReportsTab() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-deadtimes-accent rounded-xl p-6 border border-deadtimes-border">
+      <div className="bg-[#1A1A1E] rounded-xl p-6 border border-[#2D2D33]">
         <h3 className="text-lg font-semibold text-white mb-4">{t('reports.recentActivity')}</h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-deadtimes-border">
+              <tr className="border-b border-[#2D2D33]">
                 <th className="text-left py-2 px-3 text-xs font-medium text-zinc-400 uppercase">{t('reports.tableHeaders.did')}</th>
                 <th className="text-left py-2 px-3 text-xs font-medium text-zinc-400 uppercase">{t('reports.tableHeaders.lot')}</th>
                 <th className="text-left py-2 px-3 text-xs font-medium text-zinc-400 uppercase">{t('reports.tableHeaders.part')}</th>
@@ -615,20 +615,20 @@ export default function ReportsTab() {
             </thead>
             <tbody>
               {recentActivity.map((paste) => (
-                <tr key={paste.id} className="border-b border-deadtimes-border hover:bg-deadtimes-card transition-colors">
+                <tr key={paste.id} className="border-b border-[#2D2D33] hover:bg-[#202026] transition-colors">
                   <td className="py-3 px-3 text-sm text-white font-mono">{paste.did || '-'}</td>
-                  <td className="py-3 px-3 text-sm text-zinc-400">{paste.lot_number}</td>
-                  <td className="py-3 px-3 text-sm text-zinc-400 font-mono">{paste.part_number}</td>
-                  <td className="py-3 px-3 text-sm text-zinc-400">{paste.smt_location || '-'}</td>
+                  <td className="py-3 px-3 text-sm text-zinc-300">{paste.lot_number}</td>
+                  <td className="py-3 px-3 text-sm text-zinc-300 font-mono">{paste.part_number}</td>
+                  <td className="py-3 px-3 text-sm text-zinc-300">{paste.smt_location || '-'}</td>
                   <td className="py-3 px-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[paste.status]}`}>
                       {t('status.' + paste.status)}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-sm text-zinc-400">
+                  <td className="py-3 px-3 text-sm text-zinc-300">
                     {paste.viscosity_value || '-'}
                   </td>
-                  <td className="py-3 px-3 text-sm text-zinc-400">
+                  <td className="py-3 px-3 text-sm text-zinc-300">
                     {paste.fridge_in_datetime ? new Date(paste.fridge_in_datetime).toLocaleString('es-MX', { 
                       day: '2-digit', 
                       month: '2-digit',
@@ -640,7 +640,7 @@ export default function ReportsTab() {
               ))}
               {recentActivity.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-neutral-400">
+                  <td colSpan={7} className="py-8 text-center text-zinc-400">
                     {t('reports.noRecentActivity')}
                   </td>
                 </tr>

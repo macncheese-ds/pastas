@@ -15,15 +15,16 @@ export const STATUS_LABELS = {
   rejected: 'Rechazado - Volver a Mezclar',
 };
 
-// Status colors (Tailwind classes) - Grayscale palette with visual distinction
+// Status colors (Tailwind classes) - Vibrant color-coded for easy reading
 export const STATUS_COLORS = {
-  in_fridge: 'bg-gray-700 text-white border-l-4 border-gray-400',
-  out_fridge: 'bg-gray-600 text-white border-l-4 border-gray-300',
-  mixing: 'bg-gray-500 text-white border-l-4 border-gray-200',
-  viscosity_ok: 'bg-gray-700 text-white border-l-4 border-gray-400',
-  opened: 'bg-gray-600 text-white border-l-4 border-gray-300',
-  removed: 'bg-gray-400 text-gray-900 border-l-4 border-gray-600',
-  rejected: 'bg-gray-800 text-white border-l-4 border-gray-500',
+  in_fridge: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40',
+  out_fridge: 'bg-amber-500/20 text-amber-300 border border-amber-500/40',
+  mixing: 'bg-orange-500/20 text-orange-300 border border-orange-500/40',
+  viscosity_ok: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40',
+  opened: 'bg-blue-500/20 text-blue-300 border border-blue-500/40',
+  removed: 'bg-slate-500/20 text-slate-300 border border-slate-500/40',
+  rejected: 'bg-red-500/20 text-red-300 border border-red-500/40',
+  discarded: 'bg-red-900/40 text-red-400 border border-red-700/50',
 };
 
 // Next actions based on status
@@ -88,23 +89,23 @@ export const STATUS_NEXT_ACTIONS = {
   },
 };
 
-// SMT Location colors for UI - Grayscale with visual distinction
+// SMT Location colors for UI - Vibrant, high-contrast
 export const SMT_LOCATION_COLORS = {
   'SMT': { 
-    selected: 'bg-gray-700 text-white border-2 border-gray-400 ring-2 ring-gray-300', 
-    unselected: 'bg-gray-600 text-white border-gray-500 hover:bg-gray-700' 
+    selected: 'bg-cyan-600 text-white border-2 border-cyan-400 ring-2 ring-cyan-400/30 shadow-lg shadow-cyan-500/20', 
+    unselected: 'bg-slate-700/60 text-slate-300 border border-slate-600 hover:bg-slate-600/60 hover:text-white' 
   },
   'SMT2': { 
-    selected: 'bg-gray-600 text-white border-2 border-gray-300 ring-2 ring-gray-200', 
-    unselected: 'bg-gray-600 text-white border-gray-500 hover:bg-gray-700' 
+    selected: 'bg-violet-600 text-white border-2 border-violet-400 ring-2 ring-violet-400/30 shadow-lg shadow-violet-500/20', 
+    unselected: 'bg-slate-700/60 text-slate-300 border border-slate-600 hover:bg-slate-600/60 hover:text-white' 
   },
   'SMT3': { 
-    selected: 'bg-gray-500 text-white border-2 border-gray-200 ring-2 ring-gray-100', 
-    unselected: 'bg-gray-600 text-white border-gray-500 hover:bg-gray-700' 
+    selected: 'bg-emerald-600 text-white border-2 border-emerald-400 ring-2 ring-emerald-400/30 shadow-lg shadow-emerald-500/20', 
+    unselected: 'bg-slate-700/60 text-slate-300 border border-slate-600 hover:bg-slate-600/60 hover:text-white' 
   },
   'SMT4': { 
-    selected: 'bg-gray-800 text-white border-2 border-gray-500 ring-2 ring-gray-400', 
-    unselected: 'bg-gray-600 text-white border-gray-500 hover:bg-gray-700' 
+    selected: 'bg-amber-600 text-white border-2 border-amber-400 ring-2 ring-amber-400/30 shadow-lg shadow-amber-500/20', 
+    unselected: 'bg-slate-700/60 text-slate-300 border border-slate-600 hover:bg-slate-600/60 hover:text-white' 
   },
 };
 
